@@ -205,9 +205,9 @@ Design and implement a mobile application for Android that captures system audio
 
 ## Authors
 
-* Project Lead: \Ken L
-* Android Engineer: \Ken L
-* PC Engineer: \Ken L
-* Audio Consultant: \Ken L
+* Project Lead: Ken L
+* Android Engineer: Ken L
+* PC Engineer: Ken L
+* Audio Consultant: Ken L
 
 ---

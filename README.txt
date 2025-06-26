@@ -69,9 +69,9 @@ Troubleshooting:
 
 Contributors:
 
-* Android Developer: \Ken L
-* PC Developer: \Ken L
-* Audio Consultant: \Ken L
+* Android Developer: Ken L
+* PC Developer: Ken L
+* Audio Consultant: Ken L
 
 License:
 MIT License
