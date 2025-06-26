@@ -9,7 +9,7 @@ Features:
 * Optional noise cancellation for microphone input (built-in or RNNoise)
 * Selectable audio codecs (Opus, PCM, AAC) with estimated latency displayed
 * UDP-based Wi-Fi streaming with optional Wi-Fi Direct mode
-* PC playback via WASAPI, ALSA, or ASIO with device selection support
+* PC playback via WASAPI or ASIO with device selection support (Windows only)
 * Low-latency pipeline with threading, lock-free buffers, and real-time scheduling
 
 Requirements:
@@ -21,8 +21,8 @@ Android:
 
 PC:
 
-* Windows, Linux, or macOS
-* libopus, PortAudio (with ASIO support if using Windows)
+* Windows only
+* libopus, PortAudio (with ASIO support for low-latency playback)
 * Python 3 or C++ compiler (depending on receiver version)
 
 Installation:
@@ -35,10 +35,10 @@ PC Receiver (Python Prototype):
 \$ pip install pyaudio opuslib
 \$ python receiver.py
 
-PC Receiver (C++ Version):
+PC Receiver (C++ Version for Windows):
 
-1. Build using CMake with dependencies: libopus, PortAudio
-2. Run binary and select desired audio device/backend (WASAPI, ALSA, ASIO)
+1. Build using CMake with dependencies: libopus, PortAudio (enable WASAPI/ASIO backends)
+2. Run binary and select desired audio device/backend (WASAPI or ASIO)
 
 Usage:
 Android:
@@ -69,9 +69,9 @@ Troubleshooting:
 
 Contributors:
 
-* Android Developer: \[Name TBD]
-* PC Developer: \[Name TBD]
-* Audio Consultant: \[Name TBD]
+* Android Developer: \Ken L
+* PC Developer: \Ken L
+* Audio Consultant: \Ken L
 
 License:
 MIT License

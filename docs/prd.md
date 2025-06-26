@@ -48,23 +48,44 @@ Design and implement a mobile application for Android that captures system audio
 
 ### PC Receiver
 
-* Multi-threaded receiver implemented in C++ (or Python prototype)
+* Multi-threaded receiver implemented in C++ (Windows only)
 * Use **libopus** for decoding
-* Use **PortAudio**, **WASAPI**, or **ASIO** for low-latency playback
+* Use **PortAudio** with **WASAPI** or **ASIO** for low-latency playback
 * Target playback buffer size: **64–128 samples**
-* WASAPI exclusive mode or ALSA with isolated thread/core for playback
-* ASIO support for Windows users with compatible hardware (optional)
+* WASAPI exclusive mode or ASIO for direct audio path on Windows
 * **Allow user to select desired output audio device** and preferred backend (WASAPI/ASIO) in the PC UI
 
 ### Performance Optimizations
 
-* Use separate threads for capture, encode, transmit, receive, decode, and playback
-* Lock-free, fixed-size ring buffers for inter-thread communication
-* Real-time thread priorities on Android and PC (SCHED\_FIFO or THREAD\_PRIORITY\_AUDIO)
-* Disable audio processing and battery optimizations on Android
-* Support predictive clock drift compensation using lightweight resampling or frame dropping
-* Use MMAP mode with Oboe for direct audio buffer access
-* Zero-allocation, preallocated buffer strategy
+* Pipeline Architecture:
+  - Dedicated threads for each stage (capture, encode, etc.)
+  - Lock-free ring buffers between stages
+  - Real-time priorities (SCHED_FIFO/THREAD_PRIORITY_AUDIO)
+
+* Android Specific:
+  - Use Oboe's AAudio with MMAP when available
+  - Disable battery optimizations via DISABLE_KEYGUARD
+  - Fallback to OpenSL ES when needed
+
+* PC Specific:
+  - WASAPI exclusive mode by default
+  - Optional ASIO support for pro hardware
+  - Adaptive buffer sizing (64-256 samples)
+
+* Network:
+  - DSCP marking (CS5) for QoS
+  - 20% FEC redundancy
+  - Jitter buffer (3-5 packets)
+
+* Clock Sync:
+  - NTP alignment during handshake
+  - Per-packet drift compensation
+  - Speed adjustment with phase vocoder
+
+* Monitoring:
+  - Real-time latency stats
+  - Packet loss metrics
+  - CPU/memory usage tracking
 
 ### UI / UX
 
@@ -87,23 +108,22 @@ Design and implement a mobile application for Android that captures system audio
 
 ### PC Receiver
 
-* OS: Windows/Linux/macOS
+* OS: Windows only
 * Language: C++ preferred, Python fallback
 * Libraries: libopus, PortAudio, asio (optional)
 
 ---
 
-## Latency Budget Breakdown
+## Revised Latency Budget (Realistic Targets)
 
-| Stage     | Target Latency |
-| --------- | -------------- |
-| Capture   | 0.5 ms         |
-| Encode    | 1.0 ms         |
-| UDP Send  | 0.2 ms         |
-| Network   | 1.0 ms         |
-| Decode    | 0.8 ms         |
-| Playback  | 1.3 ms         |
-| **Total** | **<5.0 ms**    |
+| Stage     | Target Latency | Notes |
+| --------- | -------------- | ----- |
+| Capture   | 1.2 ms         | Device-dependent (Oboe MMAP) |
+| Encode    | 3.0 ms         | Opus CELT 5ms frames |
+| Network   | 3.0 ms         | 5GHz Wi-Fi with QoS |
+| Decode    | 1.5 ms         | libopus optimized |
+| Playback  | 2.0 ms         | WASAPI/ASIO exclusive |
+| **Total** | **<10.7 ms**   | Achievable on flagship devices |
 
 ---
 
@@ -120,7 +140,7 @@ Design and implement a mobile application for Android that captures system audio
 ## Deliverables
 
 * Android APK (debug + release builds)
-* PC receiver binary (Windows + Linux)
+* PC receiver binary (Windows only)
 * Complete source code with build scripts
 * Performance validation report with latency benchmarks
 * Markdown documentation (README, setup guide, troubleshooting)
@@ -131,21 +151,45 @@ Design and implement a mobile application for Android that captures system audio
 
 | Week | Milestone                                 |
 | ---- | ----------------------------------------- |
-| 1    | Audio capture + encode pipeline (Android) |
-| 2    | UDP networking + PC receiver MVP          |
-| 3    | Playback, decode, and sync tuning         |
-| 4    | UI polish + latency testing               |
-| 5    | Cross-platform builds + documentation     |
+| 1-2  | Core pipeline (WASAPI, Oboe AAudio)       |
+| 3-4  | Adaptive buffers + network optimization  |
+| 5-6  | Advanced features (ASIO, OpenSL ES)      |
+| 7-8  | Performance tuning + stress testing      |
+| 9    | Final documentation + release packaging   |
 
 ---
 
 ## Risks & Mitigations
 
-* **Android device limitations**: Use fallback modes and test on Pixel/Samsung
-* **Wi-Fi jitter**: Use adaptive buffer and predictive compensation
-* **CPU usage spikes**: Prioritize audio threads, use native code
-* **Mic mode conflict**: Apply isolation layers between mic/system audio paths to ensure consistency
-* **Thread interference**: Use real-time scheduling and core isolation to reduce OS-level contention
+* **Android Device Fragmentation**:
+  - Tiered performance targets
+  - Extensive device testing matrix
+  - Fallback audio paths
+
+* **Network Instability**:
+  - Adaptive jitter buffer
+  - FEC with 20% redundancy
+  - DSCP QoS marking
+
+* **Clock Drift**:
+  - Hybrid NTP+PTP sync
+  - Speed-adjusting resampler
+  - Continuous drift measurement
+
+* **PC Audio Compatibility**:
+  - WASAPI as default
+  - ASIO as optional
+  - Comprehensive audio backend testing
+
+* **Battery Optimization Interference**:
+  - DISABLE_KEYGUARD permission
+  - Foreground service with sticky notification
+  - User education about power settings
+
+* **Thermal Throttling**:
+  - CPU usage monitoring
+  - Dynamic quality adjustment
+  - Cooling period recommendations
 
 ---
 
@@ -161,9 +205,9 @@ Design and implement a mobile application for Android that captures system audio
 
 ## Authors
 
-* Project Lead: \[Name TBD]
-* Android Engineer: \[Name TBD]
-* PC Engineer: \[Name TBD]
-* Audio Consultant: \[Name TBD]
+* Project Lead: \Ken L
+* Android Engineer: \Ken L
+* PC Engineer: \Ken L
+* Audio Consultant: \Ken L
 
 ---
