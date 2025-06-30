@@ -4,14 +4,22 @@ plugins {
 }
 
 android {
-    compileSdkVersion 33
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        // Removed unavailable maven.topjohnwu.dev repository
+        // ffmpeg-kit is also available on Maven Central
+    }
+    compileSdkVersion 34
 
     defaultConfig {
         applicationId "com.example.audiocapture"
-        minSdkVersion 24
-        targetSdkVersion 33
+        minSdkVersion 29
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
+        namespace "com.example.audiocapture"
     }
 
     buildTypes {
@@ -33,12 +41,12 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
-    implementation 'com.arthenica:mobile-ffmpeg-min:4.4.LTS'
+    // implementation 'com.arthenica:mobile-ffmpeg-min:4.4.LTS'
+    // implementation 'com.arthenica:ffmpeg-kit-min-gpl:5.1.LTS'
     implementation 'com.github.topjohnwu.libsu:core:5.0.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
-    
-    // Add Opus codec dependency
-    implementation 'com.github.btelman96:opus-codec:1.1.0'
+    implementation(files("libs/ffmpeg-kit-audio-6.0-2.aar"))
+    implementation 'com.arthenica:smart-exception-java:0.2.1'
     
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.robolectric:robolectric:4.9'

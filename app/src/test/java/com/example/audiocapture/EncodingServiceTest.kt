@@ -1,7 +1,8 @@
 package com.example.audiocapture
 
-import com.btelman.opuscodec.opus.Opus
-import com.btelman.opuscodec.opus.OpusEncoder
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.ReturnCode
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before

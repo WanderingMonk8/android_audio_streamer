@@ -2,6 +2,7 @@ package com.example.audiocapture
 
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
