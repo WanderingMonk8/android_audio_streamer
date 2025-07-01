@@ -1,47 +1,36 @@
 package com.example.audiocapture
 
 import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.util.Log
+import com.google.oboe.AudioStream
+import com.google.oboe.AudioStreamBuilder
+import com.google.oboe.AudioStreamCallback
 import java.util.concurrent.atomic.AtomicBoolean
 
-class AudioCaptureService(private val mediaProjection: MediaProjection) {
-    private var audioRecord: AudioRecord? = null
-    private val isCapturing = AtomicBoolean(false)
-    private var captureThread: Thread? = null
+class AudioCaptureService(private val mediaProjection: MediaProjection) : AudioStreamCallback() {
+    internal var audioStream: AudioStream? = null
+    internal var audioStreamBuilder: AudioStreamBuilder? = null
+    internal val isCapturing = AtomicBoolean(false)
+    internal val encodingService = EncodingService()
 
     fun startCapture() {
         if (isCapturing.get()) return
 
-        val minBufferSize = AudioRecord.getMinBufferSize(
-            48000,
-            AudioFormat.CHANNEL_IN_STEREO,
-            AudioFormat.ENCODING_PCM_16BIT
-        )
-
         try {
-            audioRecord = AudioRecord.Builder()
-                .setAudioSource(MediaProjection.AUDIO_SOURCE)
-                .setAudioFormat(AudioFormat.Builder()
-                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                    .setSampleRate(48000)
-                    .setChannelMask(AudioFormat.CHANNEL_IN_STEREO)
-                    .build())
-                .setBufferSizeInBytes(minBufferSize * 2)
-                .build()
+            audioStreamBuilder = AudioStreamBuilder()
+                .setSampleRate(48000)
+                .setChannelCount(2)
+                .setFormat(AudioFormat.ENCODING_PCM_16BIT)
+                .setPerformanceMode(AudioStreamBuilder.PERFORMANCE_MODE_LOW_LATENCY)
+                .setSharingMode(AudioStreamBuilder.SHARING_MODE_EXCLUSIVE)
+                .setCallback(this)
 
-            audioRecord?.startRecording()
+            audioStream = audioStreamBuilder?.build()
+            audioStream?.start()
             isCapturing.set(true)
-            captureThread = Thread(Runnable {
-                captureAudio()
-            }, "AudioCaptureThread").apply {
-                priority = Thread.MAX_PRIORITY
-                start()
-            }
         } catch (e: Exception) {
-            Log.e("AudioCapture", "Failed to start audio capture", e)
+            Log.e("AudioCapture", "Failed to start Oboe audio capture", e)
             stopCapture()
         }
     }
@@ -50,38 +39,38 @@ class AudioCaptureService(private val mediaProjection: MediaProjection) {
         if (!isCapturing.getAndSet(false)) return
 
         try {
-            audioRecord?.stop()
-            audioRecord?.release()
-            captureThread?.join(1000)
+            audioStream?.stop()
+            audioStream?.close()
+            encodingService.release()
         } catch (e: Exception) {
-            Log.e("AudioCapture", "Error stopping capture", e)
+            Log.e("AudioCapture", "Error stopping Oboe capture", e)
         } finally {
-            audioRecord = null
-            captureThread = null
+            audioStream = null
+            audioStreamBuilder = null
         }
     }
 
-    private val encodingService = EncodingService()
-    
-    private fun captureAudio() {
-        val buffer = ByteArray(120 * 4) // 2.5ms frame @48kHz stereo 16-bit
-        while (isCapturing.get()) {
-            try {
-                val bytesRead = audioRecord?.read(buffer, 0, buffer.size) ?: 0
-                if (bytesRead > 0) {
-                    val encodedPacket = encodingService.encodeFrame(buffer)
-                    if (encodedPacket != null) {
-                        Log.d("AudioCapture", "Encoded ${encodedPacket.size} bytes")
-                        // TODO: Send encoded packet over network
-                    } else {
-                        Log.e("AudioCapture", "Encoding failed for frame")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("AudioCapture", "Error during capture", e)
-                stopCapture()
+    override fun onAudioReady(stream: AudioStream, audioData: ByteArray?, numFrames: Int): Boolean {
+        if (!isCapturing.get() || audioData == null) return false
+
+        encodingService.encodeFrame(audioData) { encodedPacket ->
+            if (encodedPacket != null) {
+                Log.d("AudioCapture", "Encoded ${encodedPacket.size} bytes")
+                // TODO: Send encoded packet over network
+            } else {
+                Log.e("AudioCapture", "Encoding failed for frame")
             }
         }
-        encodingService.release()
+        return true
+    }
+
+    override fun onErrorBeforeClose(stream: AudioStream, error: Int) {
+        Log.e("AudioCapture", "Oboe stream error before close: $error")
+        stopCapture()
+    }
+
+    override fun onErrorAfterClose(stream: AudioStream, error: Int) {
+        Log.e("AudioCapture", "Oboe stream error after close: $error")
+        stopCapture()
     }
 }

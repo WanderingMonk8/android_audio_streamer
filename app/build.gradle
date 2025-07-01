@@ -1,17 +1,25 @@
+import java.net.URL
+
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
 }
 
-android {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url 'https://jitpack.io' }
-        // Removed unavailable maven.topjohnwu.dev repository
-        // ffmpeg-kit is also available on Maven Central
+repositories {
+    // Google's Maven repository must come first for Oboe
+    google()
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+    // Removed retired FFmpeg Kit repository
+    // Added flatDir for local AAR files
+    flatDir {
+        dirs 'libs'
     }
+}
+
+android {
     compileSdkVersion 34
+    ndkVersion "21.4.7075529" // Add NDK version required by Oboe
 
     defaultConfig {
         applicationId "com.example.audiocapture"
@@ -32,8 +40,28 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    
+    afterEvaluate {
+        def aarFile = file("$projectDir/libs/ffmpeg-kit-full-gpl.aar")
+        if (!aarFile.exists()) {
+            def aarUrl = 'https://github.com/NooruddinLakhani/ffmpeg-kit-full-gpl/releases/download/v1.0.0/ffmpeg-kit-full-gpl.aar'
+            def outputFile = new File("$projectDir/libs/ffmpeg-kit-full-gpl.aar")
+            outputFile.parentFile.mkdirs()
+            
+            new URL(aarUrl).withInputStream { i ->
+                outputFile.withOutputStream { it << i }
+            }
+        }
+    }
     kotlinOptions {
         jvmTarget = '1.8'
+    }
+    
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
     }
 }
 
@@ -45,7 +73,8 @@ dependencies {
     // implementation 'com.arthenica:ffmpeg-kit-min-gpl:5.1.LTS'
     implementation 'com.github.topjohnwu.libsu:core:5.0.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
-    implementation(files("libs/ffmpeg-kit-audio-6.0-2.aar"))
+    implementation 'com.google.oboe:oboe:1.8.0'
+    implementation(name: 'ffmpeg-kit-full-gpl', ext: 'aar')
     implementation 'com.arthenica:smart-exception-java:0.2.1'
     
     testImplementation 'junit:junit:4.13.2'

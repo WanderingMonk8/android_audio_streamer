@@ -1,32 +1,36 @@
 package com.example.audiocapture
-import com.arthenica.ffmpegkit.FFmpegKit
-import com.arthenica.ffmpegkit.FFmpegKit
-import com.arthenica.ffmpegkit.ReturnCode
-import com.arthenica.ffmpegkit.StreamInformation
-import java.nio.ByteBuffer
+
+import com.example.audiocapture.encoder.Encoder
+import com.example.audiocapture.encoder.FFmpegEncoder
+
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
 class EncodingService {
-    private val frameSize = 120 // 2.5ms @48kHz
-    private val channels = 2 // stereo
     private val sampleRate = 48000
+    private val channels = 2
     private val bitrate = "64k"
+    
+    private var encoder: Encoder? = FFmpegEncoder(sampleRate, channels, bitrate)
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+    private var encodingTask: Future<ByteArray>? = null
 
-    fun encodeFrame(pcmData: ByteArray): ByteArray? {
-        return try {
-            val command = "-f s16le -ar $sampleRate -ac $channels -i pipe:0 -c:a libopus -b:a $bitrate -f ogg pipe:1"
-            val session = FFmpegKit.executeWithInput(command, pcmData)
-            
-            if (ReturnCode.isSuccess(session.returnCode)) {
-                session.output
-            } else {
-                null
+    fun encodeFrame(pcmData: ByteArray, callback: (ByteArray?) -> Unit) {
+        encodingTask?.cancel(true)
+        encodingTask = executor.submit<ByteArray> {
+            encoder?.encode(pcmData)
+        }.also { future ->
+            executor.submit {
+                callback(future.get())
             }
-        } catch (e: Exception) {
-            null
         }
     }
 
     fun release() {
-        // No cleanup needed for FFmpegKit
+        encodingTask?.cancel(true)
+        executor.shutdownNow()
+        encoder?.destroy()
+        encoder = null
     }
 }
