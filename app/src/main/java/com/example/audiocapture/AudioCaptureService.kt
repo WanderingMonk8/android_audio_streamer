@@ -25,6 +25,7 @@ class AudioCaptureService(private val mediaProjection: MediaProjection) : AudioS
                 .setPerformanceMode(AudioStreamBuilder.PERFORMANCE_MODE_LOW_LATENCY)
                 .setSharingMode(AudioStreamBuilder.SHARING_MODE_EXCLUSIVE)
                 .setCallback(this)
+                .setBufferSize(16)
 
             audioStream = audioStreamBuilder?.build()
             audioStream?.start()

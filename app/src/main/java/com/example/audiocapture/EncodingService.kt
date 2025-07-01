@@ -10,9 +10,10 @@ import java.util.concurrent.Future
 class EncodingService {
     private val sampleRate = 48000
     private val channels = 2
-    private val bitrate = "64k"
+    private val bitrate = "128k"
     
-    private var encoder: Encoder? = FFmpegEncoder(sampleRate, channels, bitrate)
+    private var encoder: Encoder? = FFmpegEncoder(sampleRate, channels, bitrate,
+        "-application lowdelay", "-frame_duration 2.5")
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private var encodingTask: Future<ByteArray>? = null
 
