@@ -33,6 +33,7 @@ class AudioCaptureService(private val mediaProjection: MediaProjection) : AudioS
         } catch (e: Exception) {
             Log.e("AudioCapture", "Failed to start Oboe audio capture", e)
             stopCapture()
+            throw e
         }
     }
 
@@ -52,7 +53,9 @@ class AudioCaptureService(private val mediaProjection: MediaProjection) : AudioS
     }
 
     override fun onAudioReady(stream: AudioStream, audioData: ByteArray?, numFrames: Int): Boolean {
-        if (!isCapturing.get() || audioData == null) return false
+        if (!isCapturing.get() || audioData == null || audioData.isEmpty()) {
+            return false
+        }
 
         encodingService.encodeFrame(audioData) { encodedPacket ->
             if (encodedPacket != null) {

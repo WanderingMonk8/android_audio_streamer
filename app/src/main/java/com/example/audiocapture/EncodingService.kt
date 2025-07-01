@@ -6,6 +6,7 @@ import com.example.audiocapture.encoder.FFmpegEncoder
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.concurrent.RejectedExecutionException
 
 class EncodingService {
     private val sampleRate = 48000
@@ -18,20 +19,41 @@ class EncodingService {
     private var encodingTask: Future<ByteArray>? = null
 
     fun encodeFrame(pcmData: ByteArray, callback: (ByteArray?) -> Unit) {
-        encodingTask?.cancel(true)
-        encodingTask = executor.submit<ByteArray> {
-            encoder?.encode(pcmData)
-        }.also { future ->
-            executor.submit {
-                callback(future.get())
+        if (pcmData.isEmpty() || encoder == null) {
+            callback(null)
+            return
+        }
+
+        try {
+            encodingTask?.cancel(true)
+            encodingTask = executor.submit<ByteArray> {
+                try {
+                    encoder?.encode(pcmData)
+                } catch (e: Exception) {
+                    null
+                }
+            }.also { future ->
+                executor.submit {
+                    try {
+                        callback(future.get())
+                    } catch (e: Exception) {
+                        callback(null)
+                    }
+                }
             }
+        } catch (e: RejectedExecutionException) {
+            callback(null)
         }
     }
 
     fun release() {
         encodingTask?.cancel(true)
         executor.shutdownNow()
-        encoder?.destroy()
+        try {
+            encoder?.release()
+        } catch (e: Exception) {
+            // Ignore release errors
+        }
         encoder = null
     }
 }

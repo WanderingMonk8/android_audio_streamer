@@ -89,4 +89,35 @@ class AudioCaptureServiceOboeTest {
         
         assertFalse(service.isCapturing.get())
     }
+
+    // NEW TESTS
+    @Test
+    fun shouldHandleNullAudioData_whenOnAudioReadyCalled() {
+        service.isCapturing.set(true)
+        
+        val result = service.onAudioReady(mockAudioStream, null, 0)
+        
+        assertFalse(result)
+        verify(mockEncodingService, never()).encodeFrame(any())
+    }
+
+    @Test
+    fun shouldHandleErrorBeforeClose_whenStreamFails() {
+        service.isCapturing.set(true)
+        
+        service.onErrorBeforeClose(mockAudioStream, 1)
+        
+        assertFalse(service.isCapturing.get())
+        verify(mockAudioStream).stop()
+        verify(mockAudioStream).close()
+    }
+
+    @Test
+    fun shouldHandleErrorAfterClose_whenStreamFails() {
+        service.isCapturing.set(true)
+        
+        service.onErrorAfterClose(mockAudioStream, 1)
+        
+        assertFalse(service.isCapturing.get())
+    }
 }
