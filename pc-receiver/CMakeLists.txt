@@ -68,6 +68,7 @@ set(AUDIO_SOURCES
     src/audio/audio_output.cpp
     src/audio/real_audio_output.cpp
     src/audio/jitter_buffer.cpp
+    src/audio/adaptive_jitter_buffer.cpp
     src/audio/audio_pipeline.cpp
 )
 
@@ -81,6 +82,7 @@ endif()
 
 # Create audio library
 add_library(audio ${AUDIO_SOURCES})
+target_link_libraries(audio network)  # Link with network library for NetworkMonitor
 if(OPUS_FOUND)
     target_link_libraries(audio ${OPUS_LIBRARIES})
     target_compile_options(audio PRIVATE ${OPUS_CFLAGS_OTHER})
@@ -128,6 +130,7 @@ add_executable(audio_tests
     tests/audio/test_audio_output.cpp
     tests/audio/test_real_audio_output.cpp
     tests/audio/test_jitter_buffer.cpp
+    tests/audio/test_adaptive_jitter_buffer.cpp
     tests/audio/test_audio_pipeline.cpp
     tests/audio_test_main.cpp
 )

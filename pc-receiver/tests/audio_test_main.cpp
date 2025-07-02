@@ -6,6 +6,7 @@ void run_real_opus_decoder_tests();
 void run_audio_output_tests();
 void run_real_audio_output_tests();
 void run_jitter_buffer_tests();
+void run_adaptive_jitter_buffer_tests();
 void run_audio_pipeline_tests();
 
 int main() {
@@ -21,6 +22,8 @@ int main() {
         run_real_audio_output_tests();
         std::cout << std::endl;
         run_jitter_buffer_tests();
+        std::cout << std::endl;
+        run_adaptive_jitter_buffer_tests();
         std::cout << std::endl;
         run_audio_pipeline_tests();
         
