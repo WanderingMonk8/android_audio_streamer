@@ -1,6 +1,8 @@
 package com.example.audiocapture
 
 import com.example.audiocapture.encoder.Encoder
+import com.example.audiocapture.network.NetworkService
+import com.example.audiocapture.network.NetworkStats
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -14,6 +16,7 @@ import org.robolectric.annotation.Config
 class EncodingServiceTest {
     private lateinit var encodingService: EncodingService
     private lateinit var testEncoder: TestEncoder
+    private lateinit var testNetworkService: TestNetworkService
     
     // Simple test encoder implementation
     private class TestEncoder : Encoder {
@@ -34,12 +37,60 @@ class EncodingServiceTest {
             destroyed = true
         }
     }
+    
+    // Simple test network service implementation
+    private class TestNetworkService : NetworkService("127.0.0.1", 12345) {
+        var sendCallCount = 0
+        var lastEncodedData: ByteArray? = null
+        var isRunningState = false
+        var shouldFailStart = false
+        
+        override fun start(): Boolean {
+            return if (shouldFailStart) {
+                false
+            } else {
+                isRunningState = true
+                true
+            }
+        }
+        
+        override fun stop() {
+            isRunningState = false
+        }
+        
+        override fun sendEncodedAudio(encodedData: ByteArray) {
+            sendCallCount++
+            lastEncodedData = encodedData
+        }
+        
+        override fun isRunning(): Boolean = isRunningState
+        
+        override fun getStats(): NetworkStats {
+            return NetworkStats(
+                packetsSent = sendCallCount.toLong(),
+                bytesSent = (lastEncodedData?.size ?: 0).toLong(),
+                sendErrors = 0,
+                queueSize = 0,
+                isRunning = isRunningState
+            )
+        }
+        
+        override fun resetStats() {
+            sendCallCount = 0
+            lastEncodedData = null
+        }
+    }
 
     @Before
     fun setup() {
         testEncoder = TestEncoder()
-        encodingService = EncodingService(initializeEncoder = false) // Don't initialize FFmpeg in tests
+        testNetworkService = TestNetworkService()
+        encodingService = EncodingService(
+            initializeEncoder = false, // Don't initialize FFmpeg in tests
+            enableNetworking = false   // Don't initialize real networking in tests
+        )
         encodingService.setEncoderForTesting(testEncoder)
+        encodingService.setNetworkServiceForTesting(testNetworkService)
     }
 
     @After
@@ -111,5 +162,94 @@ class EncodingServiceTest {
         assertNotNull(result2)
         assertEquals(2, testEncoder.encodeCallCount)
         assertArrayEquals(largeFrame, testEncoder.lastInput) // Last input should be the large frame
+    }
+
+    @Test
+    fun shouldSendEncodedAudio_whenNetworkServiceAvailable() {
+        // Arrange
+        testNetworkService.isRunningState = true
+        val testPcmData = ByteArray(480)
+
+        // Act
+        val result = encodingService.encodeFrame(testPcmData)
+
+        // Assert
+        assertNotNull(result)
+        assertEquals(1, testEncoder.encodeCallCount)
+        assertEquals(1, testNetworkService.sendCallCount)
+        assertArrayEquals(result, testNetworkService.lastEncodedData)
+    }
+
+    @Test
+    fun shouldNotSendAudio_whenEncodingFails() {
+        // Arrange
+        testNetworkService.isRunningState = true
+        testEncoder.shouldReturnNull = true
+        val testPcmData = ByteArray(480)
+
+        // Act
+        val result = encodingService.encodeFrame(testPcmData)
+
+        // Assert
+        assertNull(result)
+        assertEquals(1, testEncoder.encodeCallCount)
+        assertEquals(0, testNetworkService.sendCallCount) // Should not send when encoding fails
+    }
+
+    @Test
+    fun shouldGetNetworkStats_whenNetworkServiceAvailable() {
+        // Arrange
+        testNetworkService.isRunningState = true
+        testNetworkService.sendCallCount = 5
+
+        // Act
+        val stats = encodingService.getNetworkStats()
+
+        // Assert
+        assertNotNull(stats)
+        assertEquals(5L, stats?.packetsSent)
+        assertTrue(stats?.isRunning ?: false)
+    }
+
+    @Test
+    fun shouldReturnNull_whenNetworkServiceNotAvailable() {
+        // Arrange
+        encodingService.setNetworkServiceForTesting(null)
+
+        // Act
+        val stats = encodingService.getNetworkStats()
+        val isRunning = encodingService.isNetworkRunning()
+
+        // Assert
+        assertNull(stats)
+        assertFalse(isRunning)
+    }
+
+    @Test
+    fun shouldResetNetworkStats_whenCalled() {
+        // Arrange
+        testNetworkService.isRunningState = true
+        testNetworkService.sendCallCount = 10
+        testNetworkService.lastEncodedData = ByteArray(100)
+
+        // Act
+        encodingService.resetNetworkStats()
+
+        // Assert
+        assertEquals(0, testNetworkService.sendCallCount)
+        assertNull(testNetworkService.lastEncodedData)
+    }
+
+    @Test
+    fun shouldReleaseNetworkService_whenDestroyed() {
+        // Arrange
+        testNetworkService.isRunningState = true
+
+        // Act
+        encodingService.release()
+
+        // Assert
+        assertFalse(testNetworkService.isRunningState)
+        assertNull(encodingService.getNetworkServiceForTesting())
     }
 }

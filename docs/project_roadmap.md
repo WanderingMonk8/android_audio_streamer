@@ -13,7 +13,7 @@
 
 ### Phase 1: Core Pipeline (Weeks 1-2)
 **Implementation Checklist:**
-- [ ] Android audio capture (Oboe AAudio) - 1.2ms target
+- [X] Android audio capture (Oboe AAudio) - 1.2ms target
 - [ ] PC receiver (PortAudio/WASAPI) - 2.0ms target
 - [ ] UDP networking stack - 3.0ms target
 - [ ] End-to-end latency measurement system
