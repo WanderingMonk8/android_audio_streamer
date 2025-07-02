@@ -25,6 +25,7 @@ set(NETWORK_SOURCES
 
 set(AUDIO_SOURCES
     src/audio/opus_decoder.cpp
+    src/audio/audio_output.cpp
 )
 
 # Create network library
@@ -57,6 +58,7 @@ target_link_libraries(network_tests network)
 # Audio test executable
 add_executable(audio_tests
     tests/audio/test_opus_decoder.cpp
+    tests/audio/test_audio_output.cpp
     tests/audio_test_main.cpp
 )
 
