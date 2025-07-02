@@ -2,6 +2,7 @@
 
 #include "opus_decoder.h"
 #include "audio_output.h"
+#include "real_audio_output.h"
 #include "jitter_buffer.h"
 #include <vector>
 #include <memory>
@@ -88,7 +89,11 @@ private:
     // Pipeline components
     std::unique_ptr<JitterBuffer> jitter_buffer_;
     std::unique_ptr<OpusDecoder> decoder_;
+#ifdef HAVE_PORTAUDIO
+    std::unique_ptr<RealAudioOutput> audio_output_;
+#else
     std::unique_ptr<AudioOutput> audio_output_;
+#endif
     
     // Threading
     std::atomic<bool> running_;

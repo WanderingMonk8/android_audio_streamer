@@ -28,10 +28,26 @@ else()
     message(STATUS "PkgConfig not found, using mock implementation for Opus")
 endif()
 
+# Try to find PortAudio library
+if(PkgConfig_FOUND)
+    pkg_check_modules(PORTAUDIO portaudio-2.0)
+    if(PORTAUDIO_FOUND)
+        add_definitions(-DHAVE_PORTAUDIO)
+        message(STATUS "Found PortAudio: ${PORTAUDIO_VERSION}")
+    else()
+        message(STATUS "PortAudio not found, using mock implementation")
+    endif()
+else()
+    message(STATUS "PkgConfig not found, using mock implementation for PortAudio")
+endif()
+
 # Include directories
 include_directories(src)
 if(OPUS_FOUND)
     include_directories(${OPUS_INCLUDE_DIRS})
+endif()
+if(PORTAUDIO_FOUND)
+    include_directories(${PORTAUDIO_INCLUDE_DIRS})
 endif()
 
 # Source files
@@ -44,7 +60,9 @@ set(AUDIO_SOURCES
     src/audio/mock_opus.cpp
     src/audio/opus_decoder.cpp
     src/audio/real_opus_decoder.cpp
+    src/audio/mock_audio_output.cpp
     src/audio/audio_output.cpp
+    src/audio/real_audio_output.cpp
     src/audio/jitter_buffer.cpp
     src/audio/audio_pipeline.cpp
 )
@@ -62,6 +80,10 @@ add_library(audio ${AUDIO_SOURCES})
 if(OPUS_FOUND)
     target_link_libraries(audio ${OPUS_LIBRARIES})
     target_compile_options(audio PRIVATE ${OPUS_CFLAGS_OTHER})
+endif()
+if(PORTAUDIO_FOUND)
+    target_link_libraries(audio ${PORTAUDIO_LIBRARIES})
+    target_compile_options(audio PRIVATE ${PORTAUDIO_CFLAGS_OTHER})
 endif()
 
 # Main executable
@@ -85,6 +107,7 @@ add_executable(audio_tests
     tests/audio/test_opus_decoder.cpp
     tests/audio/test_real_opus_decoder.cpp
     tests/audio/test_audio_output.cpp
+    tests/audio/test_real_audio_output.cpp
     tests/audio/test_jitter_buffer.cpp
     tests/audio/test_audio_pipeline.cpp
     tests/audio_test_main.cpp

@@ -9,3 +9,6 @@ build
 
 # Ignore serena directory
 .serena/
+
+# Ignore rovodev directory
+.rovodev/

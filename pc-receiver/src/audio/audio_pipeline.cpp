@@ -70,11 +70,19 @@ AudioPipeline::AudioPipeline(int sample_rate, int channels, int buffer_size, int
             return;
         }
         
-        audio_output_ = std::make_unique<AudioOutput>(sample_rate, channels, buffer_size, device_id);
+#ifdef HAVE_PORTAUDIO
+        audio_output_ = std::make_unique<RealAudioOutput>(sample_rate, channels, buffer_size, device_id);
         if (!audio_output_->is_initialized()) {
-            std::cerr << "Failed to initialize audio output" << std::endl;
+            std::cerr << "Failed to initialize real audio output" << std::endl;
             return;
         }
+#else
+        audio_output_ = std::make_unique<AudioOutput>(sample_rate, channels, buffer_size, device_id);
+        if (!audio_output_->is_initialized()) {
+            std::cerr << "Failed to initialize mock audio output" << std::endl;
+            return;
+        }
+#endif
         
         initialized_ = true;
         
