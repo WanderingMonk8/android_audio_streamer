@@ -27,6 +27,7 @@ set(AUDIO_SOURCES
     src/audio/opus_decoder.cpp
     src/audio/audio_output.cpp
     src/audio/jitter_buffer.cpp
+    src/audio/audio_pipeline.cpp
 )
 
 # Create network library
@@ -61,6 +62,7 @@ add_executable(audio_tests
     tests/audio/test_opus_decoder.cpp
     tests/audio/test_audio_output.cpp
     tests/audio/test_jitter_buffer.cpp
+    tests/audio/test_audio_pipeline.cpp
     tests/audio_test_main.cpp
 )
 
