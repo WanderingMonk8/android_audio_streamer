@@ -3,6 +3,7 @@
 // Test function declarations
 void run_opus_decoder_tests();
 void run_audio_output_tests();
+void run_jitter_buffer_tests();
 
 int main() {
     std::cout << "Starting Audio Receiver Audio Tests..." << std::endl;
@@ -11,6 +12,8 @@ int main() {
         run_opus_decoder_tests();
         std::cout << std::endl;
         run_audio_output_tests();
+        std::cout << std::endl;
+        run_jitter_buffer_tests();
         
         std::cout << std::endl;
         std::cout << "All audio tests passed successfully!" << std::endl;
