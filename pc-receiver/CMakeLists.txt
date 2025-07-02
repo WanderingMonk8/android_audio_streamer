@@ -56,6 +56,8 @@ set(NETWORK_SOURCES
     src/network/udp_receiver.cpp
     src/network/qos_manager.cpp
     src/network/network_monitor.cpp
+    src/network/fec_encoder.cpp
+    src/network/fec_decoder.cpp
 )
 
 set(AUDIO_SOURCES
@@ -96,6 +98,14 @@ target_link_libraries(audio_receiver network audio)
 add_executable(audio_playback_test src/audio_playback_test.cpp)
 target_link_libraries(audio_playback_test audio)
 
+# FEC-only test executable
+add_executable(test_fec_only src/test_fec_only.cpp tests/network/test_fec.cpp)
+target_link_libraries(test_fec_only network)
+
+# Debug FEC header executable
+add_executable(debug_fec_header src/debug_fec_header.cpp)
+target_link_libraries(debug_fec_header network)
+
 # Enable testing
 enable_testing()
 
@@ -105,6 +115,7 @@ add_executable(network_tests
     tests/network/test_udp_receiver.cpp
     tests/network/test_qos_manager.cpp
     tests/network/test_network_monitor.cpp
+    tests/network/test_fec.cpp
     tests/test_main.cpp
 )
 

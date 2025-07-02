@@ -5,6 +5,7 @@ void run_packet_tests();
 void run_udp_receiver_tests();
 void run_qos_manager_tests();
 void run_network_monitor_tests();
+void run_fec_tests();
 
 int main() {
     std::cout << "Starting Audio Receiver Network Tests..." << std::endl;
@@ -17,6 +18,8 @@ int main() {
         run_qos_manager_tests();
         std::cout << std::endl;
         run_network_monitor_tests();
+        std::cout << std::endl;
+        run_fec_tests();
         
         std::cout << std::endl;
         std::cout << "All network tests passed successfully!" << std::endl;
