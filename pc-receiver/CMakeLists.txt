@@ -54,6 +54,8 @@ endif()
 set(NETWORK_SOURCES
     src/network/packet.cpp
     src/network/udp_receiver.cpp
+    src/network/qos_manager.cpp
+    src/network/network_monitor.cpp
 )
 
 set(AUDIO_SOURCES
@@ -101,6 +103,8 @@ enable_testing()
 add_executable(network_tests
     tests/network/test_packet.cpp
     tests/network/test_udp_receiver.cpp
+    tests/network/test_qos_manager.cpp
+    tests/network/test_network_monitor.cpp
     tests/test_main.cpp
 )
 
