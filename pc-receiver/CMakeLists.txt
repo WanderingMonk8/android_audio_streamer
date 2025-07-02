@@ -90,6 +90,10 @@ endif()
 add_executable(audio_receiver src/main.cpp)
 target_link_libraries(audio_receiver network audio)
 
+# Audio playback test executable
+add_executable(audio_playback_test src/audio_playback_test.cpp)
+target_link_libraries(audio_playback_test audio)
+
 # Enable testing
 enable_testing()
 

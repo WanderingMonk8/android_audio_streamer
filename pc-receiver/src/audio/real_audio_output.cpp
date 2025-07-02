@@ -1,4 +1,8 @@
 #include "audio/real_audio_output.h"
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <cstring>
 
 // Check if we have PortAudio available
 #ifdef HAVE_PORTAUDIO
@@ -6,10 +10,6 @@
 #else
 // Fallback to mock implementation if PortAudio is not available
 #include "audio/mock_audio_output.h"
-#include <iostream>
-#include <thread>
-#include <chrono>
-#include <cstring>
 #endif
 
 namespace AudioReceiver {
