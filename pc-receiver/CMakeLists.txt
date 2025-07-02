@@ -13,9 +13,26 @@ endif()
 
 # Find required packages
 find_package(Threads REQUIRED)
+find_package(PkgConfig QUIET)
+
+# Try to find Opus library
+if(PkgConfig_FOUND)
+    pkg_check_modules(OPUS opus)
+    if(OPUS_FOUND)
+        add_definitions(-DHAVE_LIBOPUS)
+        message(STATUS "Found libopus: ${OPUS_VERSION}")
+    else()
+        message(STATUS "libopus not found, using mock implementation")
+    endif()
+else()
+    message(STATUS "PkgConfig not found, using mock implementation for Opus")
+endif()
 
 # Include directories
 include_directories(src)
+if(OPUS_FOUND)
+    include_directories(${OPUS_INCLUDE_DIRS})
+endif()
 
 # Source files
 set(NETWORK_SOURCES
@@ -24,7 +41,9 @@ set(NETWORK_SOURCES
 )
 
 set(AUDIO_SOURCES
+    src/audio/mock_opus.cpp
     src/audio/opus_decoder.cpp
+    src/audio/real_opus_decoder.cpp
     src/audio/audio_output.cpp
     src/audio/jitter_buffer.cpp
     src/audio/audio_pipeline.cpp
@@ -40,6 +59,10 @@ endif()
 
 # Create audio library
 add_library(audio ${AUDIO_SOURCES})
+if(OPUS_FOUND)
+    target_link_libraries(audio ${OPUS_LIBRARIES})
+    target_compile_options(audio PRIVATE ${OPUS_CFLAGS_OTHER})
+endif()
 
 # Main executable
 add_executable(audio_receiver src/main.cpp)
@@ -60,6 +83,7 @@ target_link_libraries(network_tests network)
 # Audio test executable
 add_executable(audio_tests
     tests/audio/test_opus_decoder.cpp
+    tests/audio/test_real_opus_decoder.cpp
     tests/audio/test_audio_output.cpp
     tests/audio/test_jitter_buffer.cpp
     tests/audio/test_audio_pipeline.cpp

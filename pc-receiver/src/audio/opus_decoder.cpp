@@ -1,66 +1,7 @@
 #include "audio/opus_decoder.h"
+#include "audio/mock_opus.h"
 #include <iostream>
 #include <cstring>
-
-namespace AudioReceiver { namespace Audio { namespace Mock {
-    struct OpusDecoder {
-        int sample_rate;
-        int channels;
-    };
-    
-    OpusDecoder* opus_decoder_create(int sample_rate, int channels, int* error) {
-        if (sample_rate != 48000 || (channels != 1 && channels != 2)) {
-            *error = -1; // OPUS_BAD_ARG equivalent
-            return nullptr;
-        }
-        *error = 0; // OPUS_OK equivalent
-        auto decoder = new OpusDecoder{sample_rate, channels};
-        return decoder;
-    }
-    
-    void opus_decoder_destroy(OpusDecoder* decoder) {
-        delete decoder;
-    }
-    
-    int opus_decode_float(OpusDecoder* decoder, const unsigned char* data, int len,
-                         float* pcm, int frame_size, int decode_fec) {
-        (void)decode_fec;
-        
-        // Mock decode - simulate real Opus behavior
-        if (!pcm || frame_size <= 0) {
-            return -1; // Invalid parameters
-        }
-        
-        // Simulate invalid Opus data detection
-        // Real Opus packets have specific structure - our test data {0x01, 0x02, 0x03, 0x04} is invalid
-        if (len > 0 && data) {
-            // Very basic invalid packet detection for mock
-            // Real Opus decoder would do proper packet validation
-            if (len < 8 || (data[0] == 0x01 && data[1] == 0x02 && data[2] == 0x03 && data[3] == 0x04)) {
-                return -4; // OPUS_INVALID_PACKET equivalent
-            }
-        }
-        
-        // For valid-looking data, return silence
-        if (len > 0 && pcm && frame_size > 0) {
-            for (int i = 0; i < frame_size * decoder->channels; ++i) {
-                pcm[i] = 0.0f;
-            }
-            return frame_size;
-        }
-        
-        return -1; // Error
-    }
-    
-    int opus_decoder_ctl(OpusDecoder* decoder, int request, ...) {
-        (void)decoder; (void)request;
-        return 0; // OPUS_OK equivalent
-    }
-    
-    const char* opus_strerror(int error) {
-        return error == 0 ? "OK" : "Error";
-    }
-}}}
 
 namespace AudioReceiver {
 namespace Audio {
@@ -102,7 +43,7 @@ bool OpusDecoder::initialize() {
     
     // Create Opus decoder
     opus_decoder_ = Mock::opus_decoder_create(sample_rate_, channels_, &error);
-    if (error != 0 || opus_decoder_ == nullptr) {
+    if (error != OPUS_OK || opus_decoder_ == nullptr) {
         std::cerr << "Failed to create Opus decoder: " << Mock::opus_strerror(error) << std::endl;
         return false;
     }
@@ -162,8 +103,8 @@ std::vector<float> OpusDecoder::decode(const std::vector<uint8_t>& encoded_data)
 
 void OpusDecoder::reset() {
     if (initialized_ && opus_decoder_) {
-        int result = Mock::opus_decoder_ctl(opus_decoder_, 4028 /* OPUS_RESET_STATE */);
-        if (result != 0) {
+        int result = Mock::opus_decoder_ctl(opus_decoder_, OPUS_RESET_STATE);
+        if (result != OPUS_OK) {
             std::cerr << "Failed to reset Opus decoder: " << Mock::opus_strerror(result) << std::endl;
         }
     }
