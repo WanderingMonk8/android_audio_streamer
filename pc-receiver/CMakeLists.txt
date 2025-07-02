@@ -23,6 +23,10 @@ set(NETWORK_SOURCES
     src/network/udp_receiver.cpp
 )
 
+set(AUDIO_SOURCES
+    src/audio/opus_decoder.cpp
+)
+
 # Create network library
 add_library(network ${NETWORK_SOURCES})
 target_link_libraries(network Threads::Threads)
@@ -31,9 +35,12 @@ if(WIN32)
     target_link_libraries(network ws2_32)
 endif()
 
+# Create audio library
+add_library(audio ${AUDIO_SOURCES})
+
 # Main executable
 add_executable(audio_receiver src/main.cpp)
-target_link_libraries(audio_receiver network)
+target_link_libraries(audio_receiver network audio)
 
 # Enable testing
 enable_testing()
@@ -47,16 +54,29 @@ add_executable(network_tests
 
 target_link_libraries(network_tests network)
 
-# Add test
+# Audio test executable
+add_executable(audio_tests
+    tests/audio/test_opus_decoder.cpp
+    tests/audio_test_main.cpp
+)
+
+target_link_libraries(audio_tests audio)
+
+# Add tests
 add_test(NAME NetworkTests COMMAND network_tests)
+add_test(NAME AudioTests COMMAND audio_tests)
 
 # Compiler-specific options
 if(MSVC)
     target_compile_options(audio_receiver PRIVATE /W4)
     target_compile_options(network PRIVATE /W4)
+    target_compile_options(audio PRIVATE /W4)
     target_compile_options(network_tests PRIVATE /W4)
+    target_compile_options(audio_tests PRIVATE /W4)
 else()
     target_compile_options(audio_receiver PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(network PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(audio PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(network_tests PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(audio_tests PRIVATE -Wall -Wextra -Wpedantic)
 endif()
