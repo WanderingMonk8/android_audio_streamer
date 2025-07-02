@@ -9,6 +9,8 @@ struct AudioState {
     std::shared_ptr<oboe::AudioStream> stream;
     std::vector<float> audioBuffer;
     std::mutex bufferMutex;
+    std::unique_ptr<AudioStreamCallback> callback;
+    bool isInitialized = false;
 };
 
 class AudioStreamCallback : public oboe::AudioStreamCallback {
@@ -35,12 +37,31 @@ AudioState gAudioState;
 extern "C" {
 
 JNIEXPORT void JNICALL
-Java_com_example_audiocapture_OboeWrapper_startCapture(
+Java_com_example_audiocapture_OboeWrapper_nativeStartCapture(
     JNIEnv* env,
     jobject obj,
     jint sampleRate,
     jint channelCount
 ) {
+    std::lock_guard<std::mutex> lock(gAudioState.bufferMutex);
+    
+    // Validate parameters
+    if (sampleRate <= 0 || channelCount <= 0) {
+        jclass exceptionClass = env->FindClass("java/lang/IllegalArgumentException");
+        env->ThrowNew(exceptionClass, "Invalid sample rate or channel count");
+        return;
+    }
+    
+    // Stop existing stream if running
+    if (gAudioState.stream) {
+        gAudioState.stream->stop();
+        gAudioState.stream->close();
+        gAudioState.stream.reset();
+    }
+    
+    // Create new callback
+    gAudioState.callback = std::make_unique<AudioStreamCallback>(&gAudioState);
+    
     oboe::AudioStreamBuilder builder;
     builder.setDirection(oboe::Direction::Input)
            ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
@@ -48,19 +69,52 @@ Java_com_example_audiocapture_OboeWrapper_startCapture(
            ->setFormat(oboe::AudioFormat::Float)
            ->setChannelCount(channelCount)
            ->setSampleRate(sampleRate)
-           ->setCallback(new AudioStreamCallback(&gAudioState));
+           ->setCallback(gAudioState.callback.get());
 
     oboe::Result result = builder.openStream(gAudioState.stream);
     if (result != oboe::Result::OK) {
-        // TODO: Handle error
+        jclass exceptionClass = env->FindClass("java/lang/RuntimeException");
+        std::string errorMsg = "Failed to open Oboe stream: " + oboe::convertToText(result);
+        env->ThrowNew(exceptionClass, errorMsg.c_str());
         return;
     }
 
-    gAudioState.stream->requestStart();
+    result = gAudioState.stream->requestStart();
+    if (result != oboe::Result::OK) {
+        jclass exceptionClass = env->FindClass("java/lang/RuntimeException");
+        std::string errorMsg = "Failed to start Oboe stream: " + oboe::convertToText(result);
+        env->ThrowNew(exceptionClass, errorMsg.c_str());
+        gAudioState.stream->close();
+        gAudioState.stream.reset();
+        return;
+    }
+    
+    gAudioState.isInitialized = true;
+}
+
+JNIEXPORT void JNICALL
+Java_com_example_audiocapture_OboeWrapper_nativeStopCapture(
+    JNIEnv* env,
+    jobject obj
+) {
+    std::lock_guard<std::mutex> lock(gAudioState.bufferMutex);
+    
+    if (gAudioState.stream) {
+        gAudioState.stream->stop();
+        gAudioState.stream->close();
+        gAudioState.stream.reset();
+    }
+    
+    // Clear callback
+    gAudioState.callback.reset();
+    
+    // Clear any remaining audio data
+    gAudioState.audioBuffer.clear();
+    gAudioState.isInitialized = false;
 }
 
 JNIEXPORT jobject JNICALL
-Java_com_example_audiocapture_OboeWrapper_getAudioBuffer(
+Java_com_example_audiocapture_OboeWrapper_nativeGetAudioBuffer(
     JNIEnv* env,
     jobject obj
 ) {

@@ -1,17 +1,18 @@
 cmake_minimum_required(VERSION 3.18.1)
 
+project("audio-capture-native")
+
 # Define the library
-add_library(native-lib SHARED
+add_library(
+    native-lib
+    SHARED
     native-lib.cpp)
 
 # Find and link Oboe
 find_library(log-lib log)
-find_library(oboe-lib oboe)
+find_package(oboe REQUIRED CONFIG)
 
 target_link_libraries(native-lib
     ${log-lib}
-    ${oboe-lib})
-
-# Include Oboe headers
-target_include_directories(native-lib PRIVATE
-    ${CMAKE_SOURCE_DIR}/src/main/cpp)
+    oboe::oboe
+    android)

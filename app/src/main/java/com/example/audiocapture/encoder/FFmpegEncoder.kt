@@ -20,6 +20,7 @@ class FFmpegEncoder(
         return try {
             val command = "-f s16le -ar $sampleRate -ac $channels -i pipe:0 -c:a libopus -b:a $bitrate -f ogg pipe:1"
             
+            @Suppress("UNUSED_VARIABLE")
             val inputStream = ByteArrayInputStream(input)
             val outputStream = ByteArrayOutputStream()
             

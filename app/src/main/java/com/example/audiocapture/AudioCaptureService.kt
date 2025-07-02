@@ -1,35 +1,40 @@
 package com.example.audiocapture
 
-import android.media.AudioFormat
 import android.media.projection.MediaProjection
 import android.util.Log
-import com.google.oboe.AudioStream
-import com.google.oboe.AudioStreamBuilder
-import com.google.oboe.AudioStreamCallback
+import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
-class AudioCaptureService(private val mediaProjection: MediaProjection) : AudioStreamCallback() {
-    internal var audioStream: AudioStream? = null
-    internal var audioStreamBuilder: AudioStreamBuilder? = null
-    internal val isCapturing = AtomicBoolean(false)
-    internal val encodingService = EncodingService()
+interface AudioCaptureCallback {
+    fun onAudioReady(audioData: ByteBuffer, numFrames: Int)
+    fun onError(error: String)
+}
 
-    fun startCapture() {
+open class AudioCaptureService(
+    private val mediaProjection: MediaProjection,
+    private val callback: AudioCaptureCallback? = null,
+    private val initializeEncoder: Boolean = true
+) {
+    private val oboeWrapper = OboeWrapper()
+    private val isCapturing = AtomicBoolean(false)
+    private val encodingService = EncodingService(initializeEncoder)
+    private val audioPollingExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+    
+    // Test support fields
+    private var testAudioStream: AudioStream? = null
+    private var testAudioStreamBuilder: AudioStreamBuilder? = null
+    private var testEncodingService: EncodingService? = null
+
+    open fun startCapture() {
         if (isCapturing.get()) return
 
         try {
-            audioStreamBuilder = AudioStreamBuilder()
-                .setSampleRate(48000)
-                .setChannelCount(2)
-                .setFormat(AudioFormat.ENCODING_PCM_16BIT)
-                .setPerformanceMode(AudioStreamBuilder.PERFORMANCE_MODE_LOW_LATENCY)
-                .setSharingMode(AudioStreamBuilder.SHARING_MODE_EXCLUSIVE)
-                .setCallback(this)
-                .setBufferSize(16)
-
-            audioStream = audioStreamBuilder?.build()
-            audioStream?.start()
+            oboeWrapper.nativeStartCapture(48000, 2)
             isCapturing.set(true)
+            startAudioPolling()
         } catch (e: Exception) {
             Log.e("AudioCapture", "Failed to start Oboe audio capture", e)
             stopCapture()
@@ -37,44 +42,81 @@ class AudioCaptureService(private val mediaProjection: MediaProjection) : AudioS
         }
     }
 
-    fun stopCapture() {
+    open fun stopCapture() {
         if (!isCapturing.getAndSet(false)) return
 
         try {
-            audioStream?.stop()
-            audioStream?.close()
-            encodingService.release()
+            audioPollingExecutor.shutdown()
+            oboeWrapper.nativeStopCapture()
+            (testEncodingService ?: encodingService).release()
         } catch (e: Exception) {
             Log.e("AudioCapture", "Error stopping Oboe capture", e)
-        } finally {
-            audioStream = null
-            audioStreamBuilder = null
         }
     }
-
-    override fun onAudioReady(stream: AudioStream, audioData: ByteArray?, numFrames: Int): Boolean {
-        if (!isCapturing.get() || audioData == null || audioData.isEmpty()) {
-            return false
-        }
-
-        encodingService.encodeFrame(audioData) { encodedPacket ->
-            if (encodedPacket != null) {
-                Log.d("AudioCapture", "Encoded ${encodedPacket.size} bytes")
-                // TODO: Send encoded packet over network
-            } else {
-                Log.e("AudioCapture", "Encoding failed for frame")
+    
+    fun isCapturing(): Boolean = isCapturing.get()
+    
+    private fun startAudioPolling() {
+        audioPollingExecutor.scheduleAtFixedRate({
+            try {
+                val buffer = oboeWrapper.getBuffer()
+                buffer?.let { 
+                    val numFrames = it.remaining() / (2 * 4) // 2 channels * 4 bytes per float
+                    callback?.onAudioReady(it, numFrames)
+                    
+                    // Process for encoding
+                    (testEncodingService ?: encodingService).encodeAudio(it, numFrames)
+                }
+            } catch (e: Exception) {
+                Log.e("AudioCapture", "Error polling audio data", e)
+                callback?.onError("Audio polling failed: ${e.message}")
             }
+        }, 0, 5, TimeUnit.MILLISECONDS) // Poll every 5ms for low latency
+    }
+    
+    // Audio callback methods for testing compatibility
+    fun onAudioReady(@Suppress("UNUSED_PARAMETER") stream: AudioStream?, audioData: ByteBuffer?, numFrames: Int): Boolean {
+        return try {
+            if (audioData != null && isCapturing.get()) {
+                callback?.onAudioReady(audioData, numFrames)
+                (testEncodingService ?: encodingService).encodeAudio(audioData, numFrames)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("AudioCapture", "Error in onAudioReady", e)
+            false
         }
-        return true
     }
-
-    override fun onErrorBeforeClose(stream: AudioStream, error: Int) {
-        Log.e("AudioCapture", "Oboe stream error before close: $error")
+    
+    fun onErrorBeforeClose(@Suppress("UNUSED_PARAMETER") stream: AudioStream?, error: Int) {
+        Log.e("AudioCapture", "Audio stream error before close: $error")
+        isCapturing.set(false)
+        callback?.onError("Stream error: $error")
         stopCapture()
     }
-
-    override fun onErrorAfterClose(stream: AudioStream, error: Int) {
-        Log.e("AudioCapture", "Oboe stream error after close: $error")
-        stopCapture()
+    
+    fun onErrorAfterClose(@Suppress("UNUSED_PARAMETER") stream: AudioStream?, error: Int) {
+        Log.e("AudioCapture", "Audio stream error after close: $error")
+        isCapturing.set(false)
+        callback?.onError("Stream error after close: $error")
+    }
+    
+    // Test support methods
+    fun setAudioStreamForTesting(stream: AudioStream) {
+        testAudioStream = stream
+    }
+    
+    fun setAudioStreamBuilderForTesting(builder: AudioStreamBuilder) {
+        testAudioStreamBuilder = builder
+    }
+    
+    fun setEncodingServiceForTesting(service: EncodingService) {
+        testEncodingService = service
+    }
+    
+    fun setCapturingForTesting(capturing: Boolean) {
+        isCapturing.set(capturing)
     }
 }
