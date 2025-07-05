@@ -1,5 +1,6 @@
 package com.example.audiocapture
 
+import android.content.Context
 import com.example.audiocapture.encoder.Encoder
 import com.example.audiocapture.network.NetworkService
 import com.example.audiocapture.network.NetworkStats
@@ -8,12 +9,17 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class EncodingServiceTest {
+    @Mock
+    private lateinit var mockContext: Context
+    
     private lateinit var encodingService: EncodingService
     private lateinit var testEncoder: TestEncoder
     private lateinit var testNetworkService: TestNetworkService
@@ -39,7 +45,7 @@ class EncodingServiceTest {
     }
     
     // Simple test network service implementation
-    private class TestNetworkService : NetworkService("127.0.0.1", 12345) {
+    private inner class TestNetworkService : NetworkService(mockContext, "127.0.0.1", 12345) {
         var sendCallCount = 0
         var lastEncodedData: ByteArray? = null
         var isRunningState = false
@@ -83,9 +89,11 @@ class EncodingServiceTest {
 
     @Before
     fun setup() {
+        MockitoAnnotations.openMocks(this)
         testEncoder = TestEncoder()
         testNetworkService = TestNetworkService()
         encodingService = EncodingService(
+            context = null, // Use null context for tests to disable networking
             initializeEncoder = false, // Don't initialize FFmpeg in tests
             enableNetworking = false   // Don't initialize real networking in tests
         )

@@ -1,0 +1,29 @@
+{
+  "buildFiles": [
+    "D:\\Programming\\android_audio_streaming_app\\app\\src\\main\\cpp\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "D:\\Program Files\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "D:\\Programming\\android_audio_streaming_app\\app\\.cxx\\Debug\\501h1b6w\\armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "D:\\Program Files\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "D:\\Programming\\android_audio_streaming_app\\app\\.cxx\\Debug\\501h1b6w\\armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "native-lib::@6890427a1f51a3e7e1df": {
+      "artifactName": "native-lib",
+      "abi": "armeabi-v7a",
+      "output": "D:\\Programming\\android_audio_streaming_app\\app\\build\\intermediates\\cxx\\Debug\\501h1b6w\\obj\\armeabi-v7a\\libnative-lib.so",
+      "runtimeFiles": [
+        "C:\\Users\\kengr\\.gradle\\caches\\8.14\\transforms\\eb21ab4bd5450522bea5cf78a559e04b\\transformed\\jetified-oboe-1.8.0\\prefab\\modules\\oboe\\libs\\android.armeabi-v7a\\liboboe.so"
+      ]
+    }
+  }
+}

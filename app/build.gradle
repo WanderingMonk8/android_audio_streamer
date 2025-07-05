@@ -28,6 +28,13 @@ android {
         versionCode 1
         versionName "1.0"
         namespace "com.example.audiocapture"
+        
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+                cppFlags "-std=c++17"
+            }
+        }
     }
 
     buildTypes {

@@ -1,5 +1,6 @@
 package com.example.audiocapture
 
+import android.content.Context
 import android.media.AudioFormat
 import android.media.projection.MediaProjection
 import org.junit.After
@@ -17,6 +18,9 @@ import java.nio.ByteBuffer
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class AudioCaptureServiceOboeTest {
+    @Mock
+    private lateinit var mockContext: Context
+    
     @Mock
     private lateinit var mockProjection: MediaProjection
     
@@ -45,7 +49,7 @@ class AudioCaptureServiceOboeTest {
         // Setup encoding service mock - avoid using any() matcher
         doReturn(ByteArray(100)).`when`(mockEncodingService).encodeFrame(any(ByteArray::class.java))
         
-        service = spy(AudioCaptureService(mockProjection, mockCallback, initializeEncoder = false))
+        service = spy(AudioCaptureService(mockContext, mockProjection, mockCallback, initializeEncoder = false))
         service.setAudioStreamForTesting(mockAudioStream)
         service.setAudioStreamBuilderForTesting(mockAudioStreamBuilder)
         service.setEncodingServiceForTesting(mockEncodingService)
@@ -59,7 +63,7 @@ class AudioCaptureServiceOboeTest {
     @Test
     fun shouldStartCapture_whenCalled() {
         // Create a service that doesn't actually call native methods
-        val testService = object : AudioCaptureService(mockProjection, mockCallback, initializeEncoder = false) {
+        val testService = object : AudioCaptureService(mockContext, mockProjection, mockCallback, initializeEncoder = false) {
             override fun startCapture() {
                 setCapturingForTesting(true)
             }
@@ -85,7 +89,7 @@ class AudioCaptureServiceOboeTest {
     @Test
     fun shouldStopCapture_whenServiceStopped() {
         // Create a service that doesn't actually call native methods
-        val testService = object : AudioCaptureService(mockProjection, mockCallback, initializeEncoder = false) {
+        val testService = object : AudioCaptureService(mockContext, mockProjection, mockCallback, initializeEncoder = false) {
             override fun stopCapture() {
                 setCapturingForTesting(false)
                 mockEncodingService.release()
@@ -103,7 +107,7 @@ class AudioCaptureServiceOboeTest {
     @Test
     fun shouldHandleStartError_whenCaptureFails() {
         // Create a service that simulates start failure
-        val failingService = object : AudioCaptureService(mockProjection, mockCallback, initializeEncoder = false) {
+        val failingService = object : AudioCaptureService(mockContext, mockProjection, mockCallback, initializeEncoder = false) {
             override fun startCapture() {
                 throw RuntimeException("Native start failed")
             }

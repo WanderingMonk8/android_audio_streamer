@@ -1,7 +1,9 @@
 package com.example.audiocapture
 
+import android.content.Context
 import android.media.projection.MediaProjection
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -19,12 +21,14 @@ class PerformanceTest {
     @Mock
     private lateinit var mockProjection: MediaProjection
     
+    private lateinit var context: Context
     private lateinit var oboeWrapper: OboeWrapper
     private lateinit var service: AudioCaptureService
     
     @Before
     fun setup() {
         MockitoAnnotations.openMocks(this)
+        context = InstrumentationRegistry.getInstrumentation().targetContext
         oboeWrapper = OboeWrapper()
     }
     
@@ -46,7 +50,7 @@ class PerformanceTest {
             }
         }
         
-        service = AudioCaptureService(mockProjection, callback)
+        service = AudioCaptureService(context, mockProjection, callback)
         
         try {
             service.startCapture()
@@ -78,7 +82,7 @@ class PerformanceTest {
     
     @Test
     fun shouldMeasureEncodingPerformance() {
-        val encodingService = EncodingService()
+        val encodingService = EncodingService(context)
         val testData = ByteArray(1920) // 10ms of 48kHz stereo 16-bit audio
         val encodingTimes = mutableListOf<Long>()
         
@@ -124,7 +128,7 @@ class PerformanceTest {
             }
         }
         
-        service = AudioCaptureService(mockProjection, callback)
+        service = AudioCaptureService(context, mockProjection, callback)
         
         try {
             val runtime = Runtime.getRuntime()

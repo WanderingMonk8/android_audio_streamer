@@ -1,5 +1,6 @@
 package com.example.audiocapture
 
+import android.content.Context
 import android.media.projection.MediaProjection
 import android.util.Log
 import java.nio.ByteBuffer
@@ -14,13 +15,14 @@ interface AudioCaptureCallback {
 }
 
 open class AudioCaptureService(
+    private val context: Context,
     private val mediaProjection: MediaProjection,
     private val callback: AudioCaptureCallback? = null,
     private val initializeEncoder: Boolean = true
 ) {
     private val oboeWrapper = OboeWrapper()
     private val isCapturing = AtomicBoolean(false)
-    private val encodingService = EncodingService(initializeEncoder)
+    private val encodingService = EncodingService(context, initializeEncoder)
     private val audioPollingExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
     
     // Test support fields

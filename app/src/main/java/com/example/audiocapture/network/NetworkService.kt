@@ -1,5 +1,6 @@
 package com.example.audiocapture.network
 
+import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicLong
@@ -10,6 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * Integrates with EncodingService to transmit Opus packets via UDP
  */
 open class NetworkService(
+    private val context: Context,
     private val targetHost: String = "192.168.1.100", // Default PC IP
     private val targetPort: Int = 12345
 ) {
@@ -33,7 +35,7 @@ open class NetworkService(
     open fun start(): Boolean {
         Log.i(TAG, "Starting network service...")
         
-        udpSender = UdpSender(targetHost, targetPort)
+        udpSender = UdpSender(context, targetHost, targetPort)
         
         if (!udpSender!!.start()) {
             Log.e(TAG, "Failed to start UDP sender")
@@ -134,7 +136,7 @@ open class NetworkService(
         }
         
         // Create new service with updated target
-        val newService = NetworkService(host, port)
+        val newService = NetworkService(context, host, port)
         
         if (wasRunning) {
             return newService.start()

@@ -1,19 +1,25 @@
 package com.example.audiocapture.network
 
+import android.content.Context
 import org.junit.Test
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.After
+import org.mockito.Mock
+import org.mockito.MockitoAnnotations
 import kotlinx.coroutines.*
 
 class NetworkServiceTest {
+    @Mock
+    private lateinit var mockContext: Context
 
     private lateinit var networkService: NetworkService
     
     @Before
     fun setUp() {
+        MockitoAnnotations.openMocks(this)
         // Use localhost for testing
-        networkService = NetworkService("127.0.0.1", 12349)
+        networkService = NetworkService(mockContext, "127.0.0.1", 12349)
     }
     
     @After

@@ -1,0 +1,7 @@
+[
+{
+  "directory": "D:/Programming/android_audio_streaming_app/app/.cxx/RelWithDebInfo/6u576a1w/x86",
+  "command": "D:\\PROGRA~1\\Android\\Sdk\\ndk\\214~1.707\\TOOLCH~1\\llvm\\prebuilt\\WINDOW~1\\bin\\CLANG_~1.EXE --target=i686-none-linux-android29 --gcc-toolchain=\"D:/Program Files/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/windows-x86_64\" --sysroot=\"D:/Program Files/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/windows-x86_64/sysroot\" -Dnative_lib_EXPORTS -isystem C:/Users/kengr/.gradle/caches/8.14/transforms/eb21ab4bd5450522bea5cf78a559e04b/transformed/jetified-oboe-1.8.0/prefab/modules/oboe/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -O2 -g -DNDEBUG -fPIC -o CMakeFiles\\native-lib.dir\\native-lib.cpp.o -c D:\\Programming\\android_audio_streaming_app\\app\\src\\main\\cpp\\native-lib.cpp",
+  "file": "D:\\Programming\\android_audio_streaming_app\\app\\src\\main\\cpp\\native-lib.cpp"
+}
+]

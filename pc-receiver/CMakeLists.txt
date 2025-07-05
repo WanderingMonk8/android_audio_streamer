@@ -96,6 +96,12 @@ endif()
 add_executable(audio_receiver src/main.cpp)
 target_link_libraries(audio_receiver network audio)
 
+# TCP Audio Receiver
+add_executable(tcp_audio_receiver src/tcp_receiver.cpp)
+if(WIN32)
+    target_link_libraries(tcp_audio_receiver ws2_32)
+endif()
+
 # Audio playback test executable
 add_executable(audio_playback_test src/audio_playback_test.cpp)
 target_link_libraries(audio_playback_test audio)
@@ -137,9 +143,14 @@ add_executable(audio_tests
 
 target_link_libraries(audio_tests audio)
 
+# Integration test executable
+add_executable(integration_test tests/integration_test.cpp)
+target_link_libraries(integration_test network)
+
 # Add tests
 add_test(NAME NetworkTests COMMAND network_tests)
 add_test(NAME AudioTests COMMAND audio_tests)
+add_test(NAME IntegrationTest COMMAND integration_test)
 
 # Compiler-specific options
 if(MSVC)

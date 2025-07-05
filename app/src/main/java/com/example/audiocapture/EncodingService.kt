@@ -1,5 +1,6 @@
 package com.example.audiocapture
 
+import android.content.Context
 import com.example.audiocapture.encoder.Encoder
 import com.example.audiocapture.encoder.FFmpegEncoder
 import com.example.audiocapture.network.NetworkService
@@ -10,9 +11,10 @@ import java.util.concurrent.Future
 import java.util.concurrent.RejectedExecutionException
 
 class EncodingService(
+    private val context: Context? = null,
     private val initializeEncoder: Boolean = true,
     private val enableNetworking: Boolean = true,
-    private val targetHost: String = "192.168.1.100",
+    private val targetHost: String = "192.168.1.103",
     private val targetPort: Int = 12345
 ) {
     private val sampleRate = 48000
@@ -40,9 +42,9 @@ class EncodingService(
             }
         }
         
-        if (enableNetworking) {
+        if (enableNetworking && context != null) {
             try {
-                networkService = NetworkService(targetHost, targetPort)
+                networkService = NetworkService(context, targetHost, targetPort)
                 networkService?.start()
             } catch (e: Exception) {
                 // Network service not available in test environment

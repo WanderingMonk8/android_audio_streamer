@@ -3,6 +3,10 @@
 #include <memory>
 #include <vector>
 #include <mutex>
+#include <string>
+
+// Forward declaration
+class AudioStreamCallback;
 
 // Shared state between native and Java
 struct AudioState {
@@ -74,7 +78,7 @@ Java_com_example_audiocapture_OboeWrapper_nativeStartCapture(
     oboe::Result result = builder.openStream(gAudioState.stream);
     if (result != oboe::Result::OK) {
         jclass exceptionClass = env->FindClass("java/lang/RuntimeException");
-        std::string errorMsg = "Failed to open Oboe stream: " + oboe::convertToText(result);
+        std::string errorMsg = std::string("Failed to open Oboe stream: ") + oboe::convertToText(result);
         env->ThrowNew(exceptionClass, errorMsg.c_str());
         return;
     }
@@ -82,7 +86,7 @@ Java_com_example_audiocapture_OboeWrapper_nativeStartCapture(
     result = gAudioState.stream->requestStart();
     if (result != oboe::Result::OK) {
         jclass exceptionClass = env->FindClass("java/lang/RuntimeException");
-        std::string errorMsg = "Failed to start Oboe stream: " + oboe::convertToText(result);
+        std::string errorMsg = std::string("Failed to start Oboe stream: ") + oboe::convertToText(result);
         env->ThrowNew(exceptionClass, errorMsg.c_str());
         gAudioState.stream->close();
         gAudioState.stream.reset();
@@ -135,3 +139,5 @@ Java_com_example_audiocapture_OboeWrapper_nativeGetAudioBuffer(
     
     return buffer;
 }
+
+} // extern "C"

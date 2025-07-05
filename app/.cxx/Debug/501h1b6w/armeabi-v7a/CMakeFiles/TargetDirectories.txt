@@ -1,0 +1,3 @@
+D:/Programming/android_audio_streaming_app/app/.cxx/Debug/501h1b6w/armeabi-v7a/CMakeFiles/native-lib.dir
+D:/Programming/android_audio_streaming_app/app/.cxx/Debug/501h1b6w/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/Programming/android_audio_streaming_app/app/.cxx/Debug/501h1b6w/armeabi-v7a/CMakeFiles/rebuild_cache.dir

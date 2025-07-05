@@ -1,0 +1,15 @@
+# ninja log v5
+1	916	7732058002413733	CMakeFiles/native-lib.dir/native-lib.cpp.o	4f45efe385f999b0
+922	1363	7732058006998208	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/arm64-v8a/libnative-lib.so	e80969159afacbde
+1	102	0	clean	b6918a200bfeddb6
+18	1423	7732082233767352	CMakeFiles/native-lib.dir/native-lib.cpp.o	4f45efe385f999b0
+1424	1859	7732082238620213	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/arm64-v8a/libnative-lib.so	e80969159afacbde
+1	96	0	clean	b6918a200bfeddb6
+3	1167	7732088293252349	CMakeFiles/native-lib.dir/native-lib.cpp.o	4f45efe385f999b0
+1169	1720	7732088299032704	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/arm64-v8a/libnative-lib.so	e80969159afacbde
+0	100	0	clean	b6918a200bfeddb6
+3	1159	7732091897615784	CMakeFiles/native-lib.dir/native-lib.cpp.o	4f45efe385f999b0
+1160	1614	7732091902331177	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/arm64-v8a/libnative-lib.so	e80969159afacbde
+0	119	0	clean	b6918a200bfeddb6
+37	1139	7732097499295370	CMakeFiles/native-lib.dir/native-lib.cpp.o	4f45efe385f999b0
+1140	1622	7732097504281779	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/arm64-v8a/libnative-lib.so	e80969159afacbde

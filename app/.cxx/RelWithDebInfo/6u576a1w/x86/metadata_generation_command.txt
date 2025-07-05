@@ -1,0 +1,21 @@
+                        -HD:\Programming\android_audio_streaming_app\app\src\main\cpp
+-DCMAKE_SYSTEM_NAME=Android
+-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+-DCMAKE_SYSTEM_VERSION=29
+-DANDROID_PLATFORM=android-29
+-DANDROID_ABI=x86
+-DCMAKE_ANDROID_ARCH_ABI=x86
+-DANDROID_NDK=D:\Program Files\Android\Sdk\ndk\21.4.7075529
+-DCMAKE_ANDROID_NDK=D:\Program Files\Android\Sdk\ndk\21.4.7075529
+-DCMAKE_TOOLCHAIN_FILE=D:\Program Files\Android\Sdk\ndk\21.4.7075529\build\cmake\android.toolchain.cmake
+-DCMAKE_MAKE_PROGRAM=D:\Program Files\Android\Sdk\cmake\3.22.1\bin\ninja.exe
+-DCMAKE_CXX_FLAGS=-std=c++17
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=D:\Programming\android_audio_streaming_app\app\build\intermediates\cxx\RelWithDebInfo\6u576a1w\obj\x86
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=D:\Programming\android_audio_streaming_app\app\build\intermediates\cxx\RelWithDebInfo\6u576a1w\obj\x86
+-DCMAKE_BUILD_TYPE=RelWithDebInfo
+-DCMAKE_FIND_ROOT_PATH=D:\Programming\android_audio_streaming_app\app\.cxx\RelWithDebInfo\6u576a1w\prefab\x86\prefab
+-BD:\Programming\android_audio_streaming_app\app\.cxx\RelWithDebInfo\6u576a1w\x86
+-GNinja
+-DANDROID_STL=c++_shared
+                        Build command args: []
+                        Version: 2

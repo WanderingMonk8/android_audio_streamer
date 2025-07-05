@@ -1,0 +1,3 @@
+D:/Programming/android_audio_streaming_app/app/.cxx/Debug/501h1b6w/x86/CMakeFiles/native-lib.dir
+D:/Programming/android_audio_streaming_app/app/.cxx/Debug/501h1b6w/x86/CMakeFiles/edit_cache.dir
+D:/Programming/android_audio_streaming_app/app/.cxx/Debug/501h1b6w/x86/CMakeFiles/rebuild_cache.dir
