@@ -10,6 +10,8 @@ repositories {
     google()
     mavenCentral()
     maven { url 'https://jitpack.io' }
+    // Audio streaming repositories
+    maven { url 'https://maven.google.com' }
     // Removed retired FFmpeg Kit repository
     // Added flatDir for local AAR files
     flatDir {
@@ -18,13 +20,13 @@ repositories {
 }
 
 android {
-    compileSdkVersion 34
+    compileSdkVersion 33
     ndkVersion "21.4.7075529" // Add NDK version required by Oboe
 
     defaultConfig {
         applicationId "com.example.audiocapture"
         minSdkVersion 29
-        targetSdkVersion 34
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
         namespace "com.example.audiocapture"
@@ -87,6 +89,10 @@ dependencies {
     implementation 'com.google.oboe:oboe:1.8.0'
     implementation(name: 'ffmpeg-kit-full-gpl', ext: 'aar')
     implementation 'com.arthenica:smart-exception-java:0.2.1'
+    
+    // WebSocket dependency removed - using root UDP bypass instead
+    
+    // WebRTC dependency removed - using root UDP bypass instead
     
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.robolectric:robolectric:4.10.3'

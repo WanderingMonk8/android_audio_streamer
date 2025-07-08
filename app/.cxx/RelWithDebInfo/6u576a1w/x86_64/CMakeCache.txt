@@ -133,7 +133,7 @@ CMAKE_LIBRARY_OUTPUT_DIRECTORY:UNINITIALIZED=D:\Programming\android_audio_stream
 CMAKE_LINKER:FILEPATH=D:/Program Files/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/windows-x86_64/bin/ld.lld.exe
 
 //make program
-CMAKE_MAKE_PROGRAM:FILEPATH=D:/Program Files/Android/Sdk/cmake/3.22.1/bin/ninja.exe
+CMAKE_MAKE_PROGRAM:FILEPATH=D:/PROGRA~1/Android/Sdk/cmake/322~1.1/bin/ninja.exe
 
 //Flags used by the linker during the creation of modules.
 CMAKE_MODULE_LINKER_FLAGS:STRING=

@@ -6,6 +6,8 @@ import android.util.Log
 import android.widget.*
 import com.example.audiocapture.network.NetworkService
 import com.example.audiocapture.network.UdpSender
+import com.example.audiocapture.network.NativeUdpSender
+import com.example.audiocapture.network.SmartAudioStreamer
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -21,7 +23,7 @@ class MainActivity : Activity() {
     
     private var isStreaming = false
     private var streamingThread: Thread? = null
-    private var udpSender: UdpSender? = null
+    private var smartStreamer: SmartAudioStreamer? = null
     
     companion object {
         private const val TAG = "MainActivity"
@@ -211,20 +213,22 @@ class MainActivity : Activity() {
                 return
             }
             
-            // Create UDP sender with WiFi MulticastLock
-            addLog("Creating UdpSender with WiFi MulticastLock...")
-            udpSender = UdpSender(this@MainActivity, ipAddress, port)
+            // Use smart audio streamer with automatic protocol selection
+            addLog("Starting smart audio streamer with automatic protocol selection...")
+            smartStreamer = SmartAudioStreamer(this@MainActivity, ipAddress, port)
             
-            if (!udpSender!!.start()) {
-                addLog("Failed to start UdpSender")
+            if (!smartStreamer!!.start()) {
+                addLog("All protocols failed (UDP, Native UDP, Root UDP)")
                 runOnUiThread {
-                    showError("Failed to start UDP sender")
+                    showError("Failed to start audio streaming (all protocols failed)")
                     stopStreaming()
                 }
                 return
             }
             
-            addLog("UdpSender started successfully with WiFi MulticastLock")
+            val protocol = smartStreamer!!.getProtocolDescription()
+            addLog("Smart streamer started successfully!")
+            addLog("Active protocol: $protocol")
             
             runOnUiThread {
                 statusText.text = "Streaming..."
@@ -248,9 +252,11 @@ class MainActivity : Activity() {
                         payload = testData
                     )
                     
-                    val success = udpSender!!.sendPacket(audioPacket)
+                    val success = smartStreamer!!.sendPacket(audioPacket)
+                    
                     if (success) {
-                        addLog("Sent packet $packetCount (${testData.size} bytes) via WiFi MulticastLock")
+                        val protocol = smartStreamer!!.getActiveProtocol()
+                        addLog("Sent packet $packetCount (${testData.size} bytes) via $protocol")
                     } else {
                         addLog("Failed to send packet $packetCount")
                     }
@@ -269,8 +275,8 @@ class MainActivity : Activity() {
                 }
             }
             
-            udpSender?.stop()
-            addLog("UdpSender stopped and WiFi MulticastLock released")
+            smartStreamer?.stop()
+            addLog("Smart audio streamer stopped")
             
         } catch (e: Exception) {
             addLog("Stream error: ${e.message}")

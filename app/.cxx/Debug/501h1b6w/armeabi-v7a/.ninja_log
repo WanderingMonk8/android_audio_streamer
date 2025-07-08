@@ -1,15 +1,12 @@
 # ninja log v5
-1	934	7732058063374368	CMakeFiles/native-lib.dir/native-lib.cpp.o	fba323bdfbcc170f
-938	1384	7732058067945013	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/armeabi-v7a/libnative-lib.so	77eb11e8cdf2020e
-0	101	0	clean	b6918a200bfeddb6
-4	913	7732082249873848	CMakeFiles/native-lib.dir/native-lib.cpp.o	fba323bdfbcc170f
-914	1370	7732082254473584	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/armeabi-v7a/libnative-lib.so	77eb11e8cdf2020e
-0	97	0	clean	b6918a200bfeddb6
-2	926	7732088310307856	CMakeFiles/native-lib.dir/native-lib.cpp.o	fba323bdfbcc170f
-927	1344	7732088314540745	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/armeabi-v7a/libnative-lib.so	77eb11e8cdf2020e
-0	116	0	clean	b6918a200bfeddb6
-2	929	7732091913723849	CMakeFiles/native-lib.dir/native-lib.cpp.o	fba323bdfbcc170f
-930	1368	7732091918191819	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/armeabi-v7a/libnative-lib.so	77eb11e8cdf2020e
-1	102	0	clean	b6918a200bfeddb6
 3	933	7732097515931274	CMakeFiles/native-lib.dir/native-lib.cpp.o	fba323bdfbcc170f
 934	1368	7732097520339857	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/armeabi-v7a/libnative-lib.so	77eb11e8cdf2020e
+1	102	0	clean	b6918a200bfeddb6
+3	645	7736376584958588	CMakeFiles/native-lib.dir/native_udp.cpp.o	2b99f07130a4c4c1
+646	1151	7736376590083586	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/armeabi-v7a/libnative-lib.so	ba6d1fa450751950
+3	608	7736378330620506	CMakeFiles/native-lib.dir/native_udp.cpp.o	2b99f07130a4c4c1
+609	1028	7736378334795803	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/armeabi-v7a/libnative-lib.so	ba6d1fa450751950
+0	94	0	clean	b6918a200bfeddb6
+27	1484	7737099555470971	CMakeFiles/native-lib.dir/native_udp.cpp.o	2b99f07130a4c4c1
+4	2368	7737099564375465	CMakeFiles/native-lib.dir/native-lib.cpp.o	fba323bdfbcc170f
+2369	3266	7737099573301068	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/armeabi-v7a/libnative-lib.so	ba6d1fa450751950

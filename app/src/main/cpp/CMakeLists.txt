@@ -6,7 +6,8 @@ project("audio-capture-native")
 add_library(
     native-lib
     SHARED
-    native-lib.cpp)
+    native-lib.cpp
+    native_udp.cpp)
 
 # Find and link Oboe
 find_library(log-lib log)

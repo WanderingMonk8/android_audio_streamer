@@ -15,6 +15,8 @@ endif()
 find_package(Threads REQUIRED)
 find_package(PkgConfig QUIET)
 
+# WebSocket and WebRTC support removed - focusing on UDP streaming only
+
 # Try to find Opus library
 if(PkgConfig_FOUND)
     pkg_check_modules(OPUS opus)
@@ -76,6 +78,8 @@ set(AUDIO_SOURCES
 add_library(network ${NETWORK_SOURCES})
 target_link_libraries(network Threads::Threads)
 
+# Network library now focuses on UDP only
+
 if(WIN32)
     target_link_libraries(network ws2_32)
 endif()
@@ -95,6 +99,10 @@ endif()
 # Main executable
 add_executable(audio_receiver src/main.cpp)
 target_link_libraries(audio_receiver network audio)
+
+# UDP Audio Receiver (focused on UDP streaming only)
+add_executable(udp_audio_receiver src/udp_audio_receiver.cpp)
+target_link_libraries(udp_audio_receiver network audio)
 
 # TCP Audio Receiver
 add_executable(tcp_audio_receiver src/tcp_receiver.cpp)

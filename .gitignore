@@ -12,3 +12,10 @@ build
 
 # Ignore rovodev directory
 .rovodev/
+
+# Temporary files
+tmp*.md
+
+*.ps1
+
+debug/

@@ -63,7 +63,7 @@ class UdpSender(
             val activeNetwork = connectivityManager?.activeNetworkInfo
             Log.i(TAG, "Active network (legacy): ${activeNetwork?.typeName}, connected: ${activeNetwork?.isConnected}")
             
-            // Use newer Network API (Android 6.0+)
+            // Use newer Network API (Android 6.0+) with MIUI-specific handling
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 val currentNetwork = connectivityManager?.activeNetwork
                 val networkCapabilities = connectivityManager?.getNetworkCapabilities(currentNetwork)
@@ -71,16 +71,39 @@ class UdpSender(
                 val hasWifi = networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ?: false
                 Log.i(TAG, "Network capabilities: hasInternet=$hasInternet, hasWifi=$hasWifi")
                 
-                // Try to bind process to WiFi network if available
-                if (hasWifi && currentNetwork != null) {
-                    try {
-                        Log.i(TAG, "Attempting to bind process to WiFi network...")
-                        connectivityManager.bindProcessToNetwork(currentNetwork)
-                        Log.i(TAG, "Process bound to WiFi network successfully")
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to bind to WiFi network", e)
+                // MIUI-specific: Force WiFi network binding
+                Log.i(TAG, "MIUI device detected - forcing WiFi network binding...")
+                val allNetworks = connectivityManager?.allNetworks
+                var wifiNetwork: Network? = null
+                
+                allNetworks?.forEach { network ->
+                    val caps = connectivityManager?.getNetworkCapabilities(network)
+                    val isWifi = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ?: false
+                    val isConnected = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) ?: false
+                    
+                    Log.i(TAG, "Network $network: WiFi=$isWifi, Connected=$isConnected")
+                    
+                    if (isWifi && isConnected) {
+                        wifiNetwork = network
+                        Log.i(TAG, "Found validated WiFi network: $network")
                     }
                 }
+                
+                // Force bind to WiFi network (critical for MIUI)
+                wifiNetwork?.let { wifi ->
+                    try {
+                        Log.i(TAG, "MIUI: Binding process to WiFi network $wifi...")
+                        connectivityManager?.bindProcessToNetwork(wifi)
+                        Log.i(TAG, "MIUI: Process bound to WiFi network successfully")
+                        
+                        // Verify binding worked
+                        val boundNetwork = connectivityManager?.boundNetworkForProcess
+                        Log.i(TAG, "MIUI: Bound network verification: $boundNetwork")
+                        
+                    } catch (e: Exception) {
+                        Log.e(TAG, "MIUI: Failed to bind to WiFi network", e)
+                    }
+                } ?: Log.w(TAG, "MIUI: No validated WiFi network found!")
             }
             
             // Acquire WiFi MulticastLock to prevent Android from filtering UDP packets
