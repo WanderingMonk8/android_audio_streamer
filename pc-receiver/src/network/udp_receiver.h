@@ -74,7 +74,7 @@ private:
     std::atomic<uint64_t> packets_dropped_;
     std::atomic<uint64_t> bytes_received_;
     
-    static constexpr size_t MAX_PACKET_SIZE = 2048;
+    static constexpr size_t MAX_PACKET_SIZE = 16384; // 16KB to handle large audio packets
 };
 
 } // namespace Network

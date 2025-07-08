@@ -118,8 +118,8 @@ bool UdpReceiver::initialize_socket() {
     DWORD timeout = 100; // 100ms timeout
     setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout));
     
-    // Set socket buffer sizes
-    int buffer_size = 64 * 1024; // 64KB
+    // Set socket buffer sizes for large audio packets
+    int buffer_size = 256 * 1024; // 256KB to handle multiple large audio packets
     setsockopt(socket_, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<const char*>(&buffer_size), sizeof(buffer_size));
 #else
     struct timeval timeout;
@@ -127,7 +127,7 @@ bool UdpReceiver::initialize_socket() {
     timeout.tv_usec = 100000; // 100ms
     setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
     
-    int buffer_size = 64 * 1024; // 64KB
+    int buffer_size = 256 * 1024; // 256KB to handle multiple large audio packets
     setsockopt(socket_, SOL_SOCKET, SO_RCVBUF, &buffer_size, sizeof(buffer_size));
 #endif
     

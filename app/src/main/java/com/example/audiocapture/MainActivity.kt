@@ -11,6 +11,9 @@ import com.example.audiocapture.network.SmartAudioStreamer
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
+import java.nio.ByteBuffer
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicLong
 
 class MainActivity : Activity() {
     
@@ -24,6 +27,9 @@ class MainActivity : Activity() {
     private var isStreaming = false
     private var streamingThread: Thread? = null
     private var smartStreamer: SmartAudioStreamer? = null
+    private var audioCaptureService: AudioCaptureService? = null
+    private val audioQueue = LinkedBlockingQueue<ByteArray>(100) // Buffer for audio data
+    private val packetSequence = AtomicLong(0)
     
     companion object {
         private const val TAG = "MainActivity"
@@ -189,6 +195,8 @@ class MainActivity : Activity() {
         streamingThread?.interrupt()
         streamingThread = null
         
+        stopAudioCapture()
+        
         updateUI()
         addLog("Streaming stopped")
         statusText.text = "Stopped"
@@ -235,45 +243,51 @@ class MainActivity : Activity() {
                 statusText.setTextColor(android.graphics.Color.GREEN)
             }
             
-            var packetCount = 0
+            // Start audio capture
+            startAudioCapture()
             
-            // Send test packets every 100ms using our enhanced UdpSender
+            // Stream real audio data
             while (isStreaming) {
                 try {
-                    packetCount++
+                    // Get audio data from queue (blocks until available)
+                    val audioData = audioQueue.poll(50, java.util.concurrent.TimeUnit.MILLISECONDS)
                     
-                    // Create test audio packet
-                    val testData = "AudioPacket#$packetCount".toByteArray()
-                    
-                    // Create AudioPacket and send via UdpSender
-                    val audioPacket = com.example.audiocapture.network.AudioPacket(
-                        sequenceId = packetCount.toUInt(),
-                        timestamp = System.nanoTime().toULong(),
-                        payload = testData
-                    )
-                    
-                    val success = smartStreamer!!.sendPacket(audioPacket)
-                    
-                    if (success) {
-                        val protocol = smartStreamer!!.getActiveProtocol()
-                        addLog("Sent packet $packetCount (${testData.size} bytes) via $protocol")
-                    } else {
-                        addLog("Failed to send packet $packetCount")
+                    if (audioData != null) {
+                        val sequenceId = packetSequence.incrementAndGet()
+                        
+                        // Create AudioPacket with real audio data
+                        val audioPacket = com.example.audiocapture.network.AudioPacket(
+                            sequenceId = sequenceId.toUInt(),
+                            timestamp = System.nanoTime().toULong(),
+                            payload = audioData
+                        )
+                        
+                        val success = smartStreamer!!.sendPacket(audioPacket)
+                        
+                        if (success) {
+                            val protocol = smartStreamer!!.getActiveProtocol()
+                            if (sequenceId % 50 == 0L) { // Log every 50th packet to avoid spam
+                                addLog("Sent audio packet $sequenceId (${audioData.size} bytes) via $protocol")
+                            }
+                        } else {
+                            addLog("Failed to send audio packet $sequenceId")
+                        }
                     }
-                    
-                    Thread.sleep(100) // Send every 100ms
                     
                 } catch (e: InterruptedException) {
                     break
                 } catch (e: Exception) {
-                    addLog("Send error: ${e.message}")
+                    addLog("Audio stream error: ${e.message}")
                     runOnUiThread {
-                        showError("Send failed: ${e.message}")
+                        showError("Audio streaming failed: ${e.message}")
                         stopStreaming()
                     }
                     break
                 }
             }
+            
+            // Stop audio capture
+            stopAudioCapture()
             
             smartStreamer?.stop()
             addLog("Smart audio streamer stopped")
@@ -333,6 +347,73 @@ class MainActivity : Activity() {
         addLog("ERROR: $message")
     }
     
+    private fun startAudioCapture() {
+        try {
+            addLog("Starting audio capture...")
+            
+            // Create a simple audio capture service for testing
+            // We'll use the OboeWrapper directly for now
+            val oboeWrapper = OboeWrapper()
+            
+            // Start a simple audio capture thread
+            Thread {
+                try {
+                    oboeWrapper.nativeStartCapture(48000, 2)
+                    addLog("Oboe audio capture started")
+                    
+                    while (isStreaming) {
+                        try {
+                            val buffer = oboeWrapper.getBuffer()
+                            if (buffer != null && buffer.hasRemaining()) {
+                                // Convert ByteBuffer to ByteArray
+                                val audioBytes = ByteArray(buffer.remaining())
+                                buffer.get(audioBytes)
+                                
+                                // Add to queue for streaming (non-blocking)
+                                if (!audioQueue.offer(audioBytes)) {
+                                    // Queue is full, remove oldest and add new
+                                    audioQueue.poll()
+                                    audioQueue.offer(audioBytes)
+                                }
+                            }
+                            Thread.sleep(5) // 5ms polling interval
+                        } catch (e: InterruptedException) {
+                            break
+                        } catch (e: Exception) {
+                            addLog("Audio polling error: ${e.message}")
+                        }
+                    }
+                    
+                    oboeWrapper.nativeStopCapture()
+                    addLog("Oboe audio capture stopped")
+                    
+                } catch (e: Exception) {
+                    addLog("Oboe capture error: ${e.message}")
+                }
+            }.start()
+            
+            addLog("Audio capture thread started successfully")
+            
+        } catch (e: Exception) {
+            addLog("Failed to start audio capture: ${e.message}")
+            runOnUiThread {
+                showError("Audio capture failed: ${e.message}")
+                stopStreaming()
+            }
+        }
+    }
+    
+    private fun stopAudioCapture() {
+        try {
+            audioCaptureService?.stopCapture()
+            audioCaptureService = null
+            audioQueue.clear()
+            addLog("Audio capture stopped")
+        } catch (e: Exception) {
+            addLog("Error stopping audio capture: ${e.message}")
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         stopStreaming()

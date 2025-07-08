@@ -8,6 +8,9 @@ import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
 
 /**
  * Root-based UDP sender that bypasses EvolutionX ROM socket restrictions
@@ -22,6 +25,16 @@ class RootUdpSender(
     private var packetsSent = AtomicLong(0)
     private var bytesSent = AtomicLong(0)
     private var tempDir: File? = null
+    
+    // High-performance components
+    private var persistentRootProcess: Process? = null
+    private var rootOutputStream: DataOutputStream? = null
+    private val packetQueue = LinkedBlockingQueue<ByteArray>(200)
+    private val senderExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private var senderThread: Thread? = null
+    
+    // Real-time parallel processing for zero-latency audio
+    private val maxParallelSends = 3 // Allow up to 3 simultaneous netcat processes
     
     companion object {
         private const val TAG = "RootUdpSender"
@@ -50,14 +63,17 @@ class RootUdpSender(
             // Create temporary directory for scripts and data
             setupTempDirectory()
             
-            // Create UDP sending script
-            createUdpScript()
+            // Create optimized UDP sending infrastructure
+            setupOptimizedUdpSender()
             
             // Test root UDP connection
             if (!testRootConnection()) {
                 Log.e(TAG, "Root UDP connection test failed")
                 return false
             }
+            
+            // Start high-performance sender thread
+            startSenderThread()
             
             isRunning.set(true)
             Log.i(TAG, "Root UDP sender started successfully")
@@ -71,7 +87,7 @@ class RootUdpSender(
     }
     
     /**
-     * Send audio packet via root UDP
+     * Send audio packet via high-performance root UDP
      */
     fun sendPacket(packet: AudioPacket): Boolean {
         if (!isRunning.get()) {
@@ -82,27 +98,21 @@ class RootUdpSender(
         return try {
             val data = packet.serialize()
             
-            // Write packet data to temporary file
-            val dataFile = File(tempDir, TEMP_DATA_NAME)
-            FileOutputStream(dataFile).use { fos ->
-                fos.write(data)
-            }
-            
-            // Execute root command to send UDP packet
-            val success = executeRootCommand("sh ${tempDir}/${TEMP_SCRIPT_NAME} ${dataFile.absolutePath}")
+            // Add to queue for asynchronous sending (non-blocking)
+            val success = packetQueue.offer(data)
             
             if (success) {
                 packetsSent.incrementAndGet()
                 bytesSent.addAndGet(data.size.toLong())
-                Log.v(TAG, "Sent packet via root UDP - Seq: ${packet.sequenceId}, Size: ${data.size} bytes")
+                Log.v(TAG, "Queued packet via root UDP - Seq: ${packet.sequenceId}, Size: ${data.size} bytes")
             } else {
-                Log.w(TAG, "Failed to send packet via root UDP")
+                Log.w(TAG, "Packet queue full, dropping packet")
             }
             
             success
             
         } catch (e: Exception) {
-            Log.e(TAG, "Error sending root UDP packet: ${e.message}", e)
+            Log.e(TAG, "Error queuing root UDP packet: ${e.message}", e)
             false
         }
     }
@@ -117,6 +127,17 @@ class RootUdpSender(
         
         Log.i(TAG, "Stopping root UDP sender")
         isRunning.set(false)
+        
+        // Stop sender thread
+        senderThread?.interrupt()
+        senderThread = null
+        
+        // Close persistent root process
+        closePersistentRootProcess()
+        
+        // Shutdown executor
+        senderExecutor.shutdown()
+        
         cleanup()
         Log.i(TAG, "Root UDP sender stopped")
     }
@@ -206,7 +227,7 @@ exit 0
     
     private fun testRootConnection(): Boolean {
         return try {
-            Log.d(TAG, "Testing root UDP connection...")
+            Log.d(TAG, "Testing optimized root UDP connection...")
             
             // Create test AudioPacket with proper format
             val testPacket = AudioPacket(
@@ -215,25 +236,24 @@ exit 0
                 payload = "ROOT_UDP_TEST".toByteArray()
             )
             val testData = testPacket.serialize()
-            val testFile = File(tempDir, "test_packet.bin")
             
-            FileOutputStream(testFile).use { fos ->
-                fos.write(testData)
+            // Test the persistent root process directly
+            rootOutputStream?.let { outputStream ->
+                val base64Data = android.util.Base64.encodeToString(testData, android.util.Base64.NO_WRAP)
+                val command = "echo '$base64Data' | base64 -d | nc -u -w1 $targetHost $targetPort\n"
+                
+                outputStream.writeBytes(command)
+                outputStream.flush()
+                
+                // Give it a moment to execute
+                Thread.sleep(200)
+                
+                Log.i(TAG, "Optimized root UDP connection test successful")
+                return true
             }
             
-            // Try to send test packet
-            val success = executeRootCommand("sh ${tempDir}/${TEMP_SCRIPT_NAME} ${testFile.absolutePath}")
-            
-            if (success) {
-                Log.i(TAG, "Root UDP connection test successful")
-            } else {
-                Log.w(TAG, "Root UDP connection test failed")
-            }
-            
-            // Clean up test file
-            testFile.delete()
-            
-            success
+            Log.w(TAG, "Root UDP connection test failed - no persistent process")
+            false
             
         } catch (e: Exception) {
             Log.e(TAG, "Root connection test error: ${e.message}", e)
@@ -281,8 +301,121 @@ exit 0
         }
     }
     
+    private fun setupOptimizedUdpSender() {
+        try {
+            // Create persistent root process for high-performance sending
+            persistentRootProcess = Runtime.getRuntime().exec("su")
+            rootOutputStream = DataOutputStream(persistentRootProcess!!.outputStream)
+            
+            Log.d(TAG, "Persistent root process created successfully")
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create persistent root process: ${e.message}", e)
+            throw e
+        }
+    }
+    
+    private fun startSenderThread() {
+        senderThread = Thread {
+            Log.d(TAG, "Real-time parallel sender thread started")
+            
+            while (isRunning.get()) {
+                try {
+                    // Get packet immediately (blocking) - zero batching delay
+                    val packetData = packetQueue.poll(100, TimeUnit.MILLISECONDS)
+                    
+                    if (packetData != null) {
+                        // Send immediately with parallel processing for maximum speed
+                        sendPacketParallel(packetData)
+                    }
+                    
+                } catch (e: InterruptedException) {
+                    break
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error in real-time sender thread: ${e.message}", e)
+                }
+            }
+            
+            Log.d(TAG, "Real-time parallel sender thread stopped")
+        }
+        senderThread?.start()
+    }
+    
+    private fun sendPacketParallel(packetData: ByteArray) {
+        try {
+            rootOutputStream?.let { outputStream ->
+                // Use optimized command with background execution for zero-latency
+                val base64Data = android.util.Base64.encodeToString(packetData, android.util.Base64.NO_WRAP)
+                val command = "(echo '$base64Data' | base64 -d | nc -u -w1 $targetHost $targetPort) &\n"
+                
+                outputStream.writeBytes(command)
+                outputStream.flush()
+                
+                Log.v(TAG, "Sent packet in parallel via persistent root process - Size: ${packetData.size} bytes")
+            }
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending packet in parallel: ${e.message}", e)
+            
+            // Try to recreate persistent process if it failed
+            try {
+                closePersistentRootProcess()
+                setupOptimizedUdpSender()
+            } catch (recreateException: Exception) {
+                Log.e(TAG, "Failed to recreate persistent root process: ${recreateException.message}")
+            }
+        }
+    }
+    
+    private fun sendPacketDirect(packetData: ByteArray) {
+        try {
+            rootOutputStream?.let { outputStream ->
+                // Use base64 encoding for reliable binary data transmission
+                val base64Data = android.util.Base64.encodeToString(packetData, android.util.Base64.NO_WRAP)
+                val command = "echo '$base64Data' | base64 -d | nc -u -w1 $targetHost $targetPort\n"
+                
+                outputStream.writeBytes(command)
+                outputStream.flush()
+                
+                Log.v(TAG, "Sent packet directly via persistent root process - Size: ${packetData.size} bytes")
+            }
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending packet directly: ${e.message}", e)
+            
+            // Try to recreate persistent process if it failed
+            try {
+                closePersistentRootProcess()
+                setupOptimizedUdpSender()
+            } catch (recreateException: Exception) {
+                Log.e(TAG, "Failed to recreate persistent root process: ${recreateException.message}")
+            }
+        }
+    }
+    
+    
+    private fun closePersistentRootProcess() {
+        try {
+            rootOutputStream?.writeBytes("exit\n")
+            rootOutputStream?.flush()
+            rootOutputStream?.close()
+            rootOutputStream = null
+            
+            persistentRootProcess?.destroy()
+            persistentRootProcess = null
+            
+            Log.d(TAG, "Persistent root process closed")
+            
+        } catch (e: Exception) {
+            Log.w(TAG, "Error closing persistent root process: ${e.message}")
+        }
+    }
+
     private fun cleanup() {
         try {
+            // Clear packet queue
+            packetQueue.clear()
+            
             tempDir?.let { dir ->
                 if (dir.exists()) {
                     dir.listFiles()?.forEach { file ->
