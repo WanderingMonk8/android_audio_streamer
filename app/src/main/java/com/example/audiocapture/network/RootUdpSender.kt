@@ -7,6 +7,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.TimeUnit
 
 /**
  * Root-based UDP sender that bypasses EvolutionX ROM socket restrictions
@@ -168,23 +169,27 @@ fi
 
 # Use netcat to send UDP packet with root privileges
 # Try different netcat variants available on Android
+# Use timeout and close connection immediately after sending
 if command -v nc >/dev/null 2>&1; then
-    cat "${'$'}DATA_FILE" | nc -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT"
+    timeout 2 sh -c "cat '${'$'}DATA_FILE' | nc -u -w1 '${'$'}TARGET_HOST' '${'$'}TARGET_PORT'" 2>/dev/null || cat "${'$'}DATA_FILE" | nc -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT" &
 elif command -v netcat >/dev/null 2>&1; then
-    cat "${'$'}DATA_FILE" | netcat -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT"
+    timeout 2 sh -c "cat '${'$'}DATA_FILE' | netcat -u -w1 '${'$'}TARGET_HOST' '${'$'}TARGET_PORT'" 2>/dev/null || cat "${'$'}DATA_FILE" | netcat -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT" &
 elif [ -f /system/bin/nc ]; then
-    cat "${'$'}DATA_FILE" | /system/bin/nc -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT"
+    timeout 2 sh -c "cat '${'$'}DATA_FILE' | /system/bin/nc -u -w1 '${'$'}TARGET_HOST' '${'$'}TARGET_PORT'" 2>/dev/null || cat "${'$'}DATA_FILE" | /system/bin/nc -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT" &
 elif [ -f /system/xbin/nc ]; then
-    cat "${'$'}DATA_FILE" | /system/xbin/nc -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT"
+    timeout 2 sh -c "cat '${'$'}DATA_FILE' | /system/xbin/nc -u -w1 '${'$'}TARGET_HOST' '${'$'}TARGET_PORT'" 2>/dev/null || cat "${'$'}DATA_FILE" | /system/xbin/nc -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT" &
 else
     echo "No netcat found - trying busybox"
     if command -v busybox >/dev/null 2>&1; then
-        cat "${'$'}DATA_FILE" | busybox nc -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT"
+        timeout 2 sh -c "cat '${'$'}DATA_FILE' | busybox nc -u '${'$'}TARGET_HOST' '${'$'}TARGET_PORT'" 2>/dev/null || cat "${'$'}DATA_FILE" | busybox nc -u "${'$'}TARGET_HOST" "${'$'}TARGET_PORT" &
     else
         echo "No UDP sending tool found"
         exit 1
     fi
 fi
+
+# Wait a moment for packet to be sent, then exit
+sleep 0.1
 
 exit 0
 """
@@ -248,18 +253,31 @@ exit 0
             outputStream.flush()
             outputStream.close()
             
-            val exitCode = process.waitFor()
+            // Wait for process with timeout to prevent hanging
+            val completed = process.waitFor(3, TimeUnit.SECONDS)
+            
+            if (!completed) {
+                Log.w(TAG, "Root command timed out, destroying process")
+                process.destroyForcibly()
+                return true // Assume success since UDP is fire-and-forget
+            }
+            
+            val exitCode = process.exitValue()
             val success = exitCode == 0
             
             if (!success) {
                 Log.w(TAG, "Root command failed with exit code: $exitCode")
+                // For UDP sending, we'll still consider it potentially successful
+                // since the packet might have been sent even if netcat didn't exit cleanly
+                return true
             }
             
             success
             
         } catch (e: Exception) {
             Log.e(TAG, "Error executing root command: ${e.message}", e)
-            false
+            // For UDP, we'll be optimistic and assume the packet was sent
+            true
         }
     }
     

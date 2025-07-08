@@ -10,3 +10,11 @@
 19	640	7737099599734307	CMakeFiles/native-lib.dir/native_udp.cpp.o	2e4867527f95b07f
 3	931	7737099602536358	CMakeFiles/native-lib.dir/native-lib.cpp.o	560fd366d455d0cd
 931	1409	7737099607412076	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/x86_64/libnative-lib.so	914da2afb5d637ec
+0	95	0	clean	b6918a200bfeddb6
+32	850	7737165421163039	CMakeFiles/native-lib.dir/native_udp.cpp.o	2e4867527f95b07f
+4	1406	7737165426683467	CMakeFiles/native-lib.dir/native-lib.cpp.o	560fd366d455d0cd
+1407	1888	7737165431595349	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/x86_64/libnative-lib.so	914da2afb5d637ec
+0	104	0	clean	b6918a200bfeddb6
+20	755	7737171234034359	CMakeFiles/native-lib.dir/native_udp.cpp.o	2e4867527f95b07f
+3	1077	7737171237186229	CMakeFiles/native-lib.dir/native-lib.cpp.o	560fd366d455d0cd
+1077	1598	7737171242474336	D:/Programming/android_audio_streaming_app/app/build/intermediates/cxx/Debug/501h1b6w/obj/x86_64/libnative-lib.so	914da2afb5d637ec
